@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "assets": {
+    "g1-4010-mid360": {
+      "path": "assets/g1_29dof_rev_1_0/G1_29dof_mid360.usd",
+      "sha256": "b4eb671d4c82308011cfc6ddc584a994cce4704d55821423deb9fe829a150267",
+      "wrist_motor": "4010"
+    },
+    "g1-5010-mid360": {
+      "path": "assets/g1_29dof_mode_13_5010/G1_29dof_mode_13_5010_mid360.usd",
+      "sha256": "ef41e1ee1d9d966fc9b45c3f025ff872684759055388b25e73a8631f7e574650",
+      "wrist_motor": "5010"
+    }
+  }
+}

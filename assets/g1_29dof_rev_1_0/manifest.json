@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "asset": "G1_29dof_mid360.usd",
+  "usage": "README.md",
+  "ros2_pointcloud_publisher": "../../scripts/publish_mid360_ros2_isaacsim51.py",
+  "source": "external:g1_29dof_rev_1_0",
+  "composition": {
+    "self_contained_usd": true,
+    "external_usd_references": [],
+    "embedded_action_graph": false,
+    "runtime_graph_path": "<robot_instance_path>/ROS_Mid360PointCloud",
+    "runtime_graph_layer": "Session Layer"
+  },
+  "coordinate_system": {
+    "meters_per_unit": 1,
+    "up_axis": "Z"
+  },
+  "default_prim": "/g1_29dof_rev_1_0",
+  "articulation_root": "/g1_29dof_rev_1_0/pelvis",
+  "torso_prim": "/g1_29dof_rev_1_0/torso_link",
+  "revolute_joint_count": 29,
+  "mid360": {
+    "prim": "/g1_29dof_rev_1_0/torso_link/mid360_link/mid360_native_approx",
+    "type": "OmniLidar",
+    "model": "Mid-360 40-line rotary approximation",
+    "scan_type": "ROTARY",
+    "scan_rate_hz": 10,
+    "report_rate_per_emitter_hz": 5000,
+    "emitters": 40,
+    "points_per_second": 200000,
+    "elevation_deg": [-7.0, 52.0],
+    "robot_frame_elevation_deg": [-52.0, 7.0],
+    "mount_roll_deg": 180.0,
+    "range_m": [0.1, 70.0],
+    "low_reflectivity_range_m": 40.0
+  },
+  "robot": {
+    "family": "Unitree G1 29-DoF rev_1_0",
+    "mode_machine": 5,
+    "wrist_motor": "4010"
+  },
+  "files": {
+    "G1_29dof_mid360.usd": {
+      "bytes": 28344112,
+      "sha256": "b4eb671d4c82308011cfc6ddc584a994cce4704d55821423deb9fe829a150267"
+    }
+  }
+}
