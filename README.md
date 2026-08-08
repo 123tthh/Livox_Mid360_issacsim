@@ -108,6 +108,13 @@ python3 scripts/install_into_lidar_hiking.py /path/to/Lidar_Hiking
 安装器还会同步组合场景使用的 Isaac Sim 5.1 ROS 2 发布脚本，使 40-state
 轨迹驱动器随 `/mid360/points` 发布自动启动。
 
+## 独立 MID-360 资产
+
+`standalone/MID360_nonrepetitive.usd` 可直接作为独立组件导入 Isaac Sim 5.1；
+它相对引用同目录的 `mid360_cad.usd`，并包含与机器人组合资产相同的完整压缩轨迹。
+运行 `standalone/drive_mid360_nonrepetitive_isaacsim51.py` 可在时间轴播放期间切换
+全部 40 个非重复状态。详细用法见 `standalone/README.md`。
+
 ## 限制
 
 - 本仓库只提供传感器、机器人组合资产和 ROS 2 发布，不包含 Lidar_Hiking 策略、训练场景或
