@@ -2,6 +2,9 @@
 
 `G1_29dof_mid360.usd` is the self-contained 29-DoF G1 4010 baseline
 (`mode_machine=5`). It has 29 revolute joints and no external USD references.
+Its Isaac Sim 5.1 `OmniLidar` uses a fixed-size runtime state backed by the
+embedded 40-state, four-second Livox reference trajectory at 200,000 rays/s
+and 10 Hz. The ROS publisher drives the state without modifying the root USD.
 The sensor prim is:
 
 ```text

@@ -18,8 +18,8 @@
   "derived_urdf": "g1_29dof_mode_13_5010_torsoBase_popsicle_with_shoe.urdf",
   "files": {
     "G1_29dof_mode_13_5010_mid360.usd": {
-      "bytes": 30952193,
-      "sha256": "ef41e1ee1d9d966fc9b45c3f025ff872684759055388b25e73a8631f7e574650"
+      "bytes": 34038068,
+      "sha256": "84184da46c529481561a7739f1b60d6c148f9414ccdb12d6c4f05c5e7bad41a5"
     },
     "g1_29dof_mode_13_5010_torsoBase_popsicle_with_shoe.urdf": {
       "bytes": 35854,
@@ -27,17 +27,18 @@
     }
   },
   "mid360": {
-    "elevation_deg": [
-      -7.0,
-      52.0
-    ],
-    "emitters": 40,
-    "model": "Mid-360 40-line rotary approximation",
+    "channels": 20000,
+    "emitters_per_state": 20000,
+    "model": "MID-360 official non-repetitive pattern replay",
     "mount_roll_deg": 180.0,
     "mount_translation_m": [
       0.0002835,
       3e-05,
       0.41618
+    ],
+    "nominal_elevation_deg": [
+      -7.0,
+      52.0
     ],
     "points_per_second": 200000,
     "prim": "/g1_29dof_mode_13_5010_mid360/torso_link/mid360_link/mid360_native_approx",
@@ -45,13 +46,24 @@
       0.1,
       70.0
     ],
-    "report_rate_per_emitter_hz": 5000,
-    "robot_frame_elevation_deg": [
+    "report_rate_hz": 10,
+    "robot_frame_nominal_elevation_deg": [
       -52.0,
       7.0
     ],
+    "rtx_emitter_states": 1,
+    "runtime_pattern_driver": "scripts/publish_mid360_ros2_isaacsim51.py",
     "scan_rate_hz": 10,
-    "scan_type": "ROTARY",
+    "scan_type": "SOLID_STATE",
+    "trajectory_duration_s": 4.0,
+    "trajectory_elevation_deg": [
+      -7.2123,
+      52.164
+    ],
+    "trajectory_points": 800000,
+    "trajectory_sha256": "aa1fc08b6a4400608dbd6ee832b7ea3a9c3c37197e734f60f58fe5abf762269a",
+    "trajectory_source": "assets/mid360_pattern/mid360.csv",
+    "trajectory_states": 40,
     "type": "OmniLidar"
   },
   "revolute_joint_count": 29,
@@ -69,10 +81,10 @@
   },
   "schema_version": 2,
   "source": {
-    "mid360_source": "assets/g1_29dof_rev_1_0/G1_29dof_mid360.usd",
-    "mid360_source_sha256": "b4eb671d4c82308011cfc6ddc584a994cce4704d55821423deb9fe829a150267",
     "instinctlab_commit": "ba28d3d2655b15a19b729476a630937a19610a3b",
     "instinctlab_repository": "https://github.com/project-instinct/InstinctLab",
+    "mid360_source": "assets/g1_29dof_rev_1_0/G1_29dof_mid360.usd",
+    "mid360_source_sha256": "a2ee53e6e8c02a4f0bb9f77f9d70b6db8769f2b336779dc5c46bdb1bebc4fc4b",
     "training_collision_urdf": "assets/g1_29dof_mode_13_5010/source/instinctlab/g1_29dof_torsoBase_popsicle_with_shoe.urdf",
     "training_collision_urdf_sha256": "ef88a3094280b966624f60f7179aa59b7b2536fc282cf9fefa0c71c75a0a40fb",
     "unitree_commit": "f3772ce54c56ef2d34c6aee8100bc768896c7d19",

@@ -223,14 +223,23 @@ def write_manifest(
         "mid360": {
             "prim": composed_summary["mid360_prim"],
             "type": "OmniLidar",
-            "model": "Mid-360 40-line rotary approximation",
-            "scan_type": "ROTARY",
+            "model": "MID-360 official non-repetitive pattern replay",
+            "scan_type": "SOLID_STATE",
             "scan_rate_hz": composed_summary["mid360_scan_rate_hz"],
-            "report_rate_per_emitter_hz": 5000,
-            "emitters": composed_summary["mid360_emitters"],
+            "report_rate_hz": 10,
+            "emitters_per_state": composed_summary["mid360_emitters"],
+            "rtx_emitter_states": 1,
+            "trajectory_states": 40,
+            "channels": 20_000,
             "points_per_second": 200000,
-            "elevation_deg": [-7.0, 52.0],
-            "robot_frame_elevation_deg": [-52.0, 7.0],
+            "nominal_elevation_deg": [-7.0, 52.0],
+            "trajectory_elevation_deg": [-7.2123, 52.164],
+            "robot_frame_nominal_elevation_deg": [-52.0, 7.0],
+            "trajectory_duration_s": 4.0,
+            "trajectory_points": 800000,
+            "trajectory_source": "assets/mid360_pattern/mid360.csv",
+            "trajectory_sha256": "aa1fc08b6a4400608dbd6ee832b7ea3a9c3c37197e734f60f58fe5abf762269a",
+            "runtime_pattern_driver": "scripts/publish_mid360_ros2_isaacsim51.py",
             "mount_translation_m": [0.0002835, 0.00003, 0.41618],
             "mount_roll_deg": 180.0,
             "range_m": [0.1, 70.0],
@@ -335,7 +344,7 @@ def _convert_and_compose(derived_urdf: Path, lidar_usd: Path, output_usd: Path) 
         raise RuntimeError(f"flattened asset has {len(revolute_joints)} revolute joints, expected 29")
     if not sensor.IsValid() or sensor.GetTypeName() != "OmniLidar":
         raise RuntimeError(f"flattened asset has no OmniLidar at {sensor_path}")
-    if sensor.GetAttribute("omni:sensor:Core:numberOfEmitters").Get() != 40:
+    if sensor.GetAttribute("omni:sensor:Core:numberOfEmitters").Get() != 20_000:
         raise RuntimeError("MID360 emitter contract changed during composition")
     if sensor.GetAttribute("omni:sensor:Core:scanRateBaseHz").Get() != 10:
         raise RuntimeError("MID360 scan-rate contract changed during composition")
@@ -346,7 +355,7 @@ def _convert_and_compose(derived_urdf: Path, lidar_usd: Path, output_usd: Path) 
         "articulation_root": str(default_prim.GetPath().AppendPath("torso_link")),
         "revolute_joint_count": len(revolute_joints),
         "mid360_prim": str(sensor_path),
-        "mid360_emitters": 40,
+        "mid360_emitters": 20_000,
         "mid360_scan_rate_hz": 10,
     }
 

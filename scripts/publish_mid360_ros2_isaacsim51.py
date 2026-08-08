@@ -1,4 +1,4 @@
-"""Publish a G1-mounted MID360 approximation as ROS 2 PointCloud2.
+"""Publish a G1-mounted MID360 non-repetitive scan as ROS 2 PointCloud2.
 
 Run this whole file from Window > Script Editor after opening either bundled
 G1 USD in Isaac Sim 5.1 with the ROS 2 Bridge enabled. It builds this graph:
@@ -28,6 +28,10 @@ temporary graph/render product.
 
 from __future__ import annotations
 
+import array
+import sys
+import zlib
+
 import carb
 import carb.settings
 import omni.graph.core as og
@@ -36,17 +40,19 @@ import omni.replicator.core as rep
 import omni.timeline
 import omni.usd
 import usdrt
-from pxr import Gf, Sdf, Usd, UsdGeom
+from pxr import Gf, Sdf, Usd, UsdGeom, Vt
 
 import __main__
 
 LIDAR_SUFFIX = "/torso_link/mid360_link/mid360_native_approx"
 MOUNT_SUFFIX = "/torso_link/mid360_link"
 IMU_SUFFIX = "/torso_link/mid360_imu"
+PATTERN_SUFFIX = "/torso_link/mid360_link/mid360_nonrepetitive_pattern"
 ROBOT_ROOT_PATH = "/g1_29dof_mode_13_5010_mid360"
 MOUNT_PATH = ROBOT_ROOT_PATH + MOUNT_SUFFIX
 LIDAR_PATH = ROBOT_ROOT_PATH + LIDAR_SUFFIX
 IMU_PATH = ROBOT_ROOT_PATH + IMU_SUFFIX
+PATTERN_PATH = ROBOT_ROOT_PATH + PATTERN_SUFFIX
 GRAPH_PATH = ROBOT_ROOT_PATH + "/ROS_Mid360PointCloud"
 TOPIC_NAME = "mid360/points"
 FRAME_ID = "mid360_link"
@@ -75,6 +81,11 @@ PUBLISH_FRAME_SKIP_COUNT = 0
 USE_SYSTEM_TIME = False
 QUEUE_SIZE = 10
 AUTO_START_TIMELINE = False
+PATTERN_ENCODING = "zlib+u16le:azimuth_centideg,elevation_centideg_plus_1000"
+PATTERN_ATTRIBUTE_NAMES = (
+    "omni:sensor:Core:emitterState:s001:azimuthDeg",
+    "omni:sensor:Core:emitterState:s001:elevationDeg",
+)
 
 
 def _resolve_robot_instance(stage: Usd.Stage) -> None:
@@ -112,12 +123,13 @@ def _resolve_robot_instance(stage: Usd.Stage) -> None:
 
     lidar_path = str(candidates[0].GetPath())
     robot_root_path = lidar_path[: -len(LIDAR_SUFFIX)]
-    global ROBOT_ROOT_PATH, MOUNT_PATH, LIDAR_PATH, IMU_PATH, GRAPH_PATH
+    global ROBOT_ROOT_PATH, MOUNT_PATH, LIDAR_PATH, IMU_PATH, PATTERN_PATH, GRAPH_PATH
     global ROBOT_FIXED_FRAME_ID
     ROBOT_ROOT_PATH = robot_root_path
     MOUNT_PATH = robot_root_path + MOUNT_SUFFIX
     LIDAR_PATH = lidar_path
     IMU_PATH = robot_root_path + IMU_SUFFIX
+    PATTERN_PATH = robot_root_path + PATTERN_SUFFIX
     GRAPH_PATH = robot_root_path + "/ROS_Mid360PointCloud"
     ROBOT_FIXED_FRAME_ID = Sdf.Path(robot_root_path).name
     print(f"[Mid360ROS2] Reusable asset instance resolved: {ROBOT_ROOT_PATH}; runtime graph: {GRAPH_PATH}")
@@ -165,8 +177,24 @@ def _validate_lidar(stage: Usd.Stage) -> None:
     core = "omni:sensor:Core:"
     emitters = lidar.GetAttribute(core + "numberOfEmitters").Get()
     scan_type = str(lidar.GetAttribute(core + "scanType").Get())
-    if int(emitters) != 40 or scan_type != "ROTARY":
+    report_rate = lidar.GetAttribute(core + "reportRateBaseHz").Get()
+    if int(emitters) != 20_000 or scan_type != "SOLID_STATE" or int(report_rate) != 10:
         raise RuntimeError(f"Unexpected LiDAR profile: emitters={emitters}, scanType={scan_type!r}")
+
+    pattern = stage.GetPrimAtPath(PATTERN_PATH)
+    if not pattern.IsValid():
+        raise RuntimeError(f"No embedded MID-360 non-repetitive trajectory at {PATTERN_PATH}")
+    expected_pattern = {
+        "encoding": PATTERN_ENCODING,
+        "pointRateHz": 200_000,
+        "scanRateHz": 10,
+        "pointsPerState": 20_000,
+        "trajectoryStates": 40,
+    }
+    for name, expected in expected_pattern.items():
+        actual = pattern.GetAttribute(f"lidarHiking:{name}").Get()
+        if actual != expected:
+            raise RuntimeError(f"Unexpected pattern {name}: {actual!r} != {expected!r}")
 
     mount = stage.GetPrimAtPath(MOUNT_PATH)
     if not mount.IsValid() or not mount.IsA(UsdGeom.Xformable):
@@ -191,6 +219,90 @@ def _validate_lidar(stage: Usd.Stage) -> None:
     print(
         "[Mid360ROS2] LiDAR and SLAM IMU are colocated/aligned; FAST-LIO extrinsic_T=0 and extrinsic_R=I are required"
     )
+
+
+def _load_pattern_runtime(stage: Usd.Stage) -> dict:
+    pattern = stage.GetPrimAtPath(PATTERN_PATH)
+    compressed = bytes(pattern.GetAttribute("lidarHiking:compressedDirections").Get())
+    raw = zlib.decompress(compressed)
+    values = array.array("H")
+    values.frombytes(raw)
+    if sys.byteorder != "little":
+        values.byteswap()
+
+    points_per_state = int(pattern.GetAttribute("lidarHiking:pointsPerState").Get())
+    trajectory_states = int(pattern.GetAttribute("lidarHiking:trajectoryStates").Get())
+    if len(values) != points_per_state * trajectory_states * 2:
+        raise RuntimeError(
+            f"Corrupt MID-360 trajectory: {len(values)} uint16 values for "
+            f"{points_per_state} points x {trajectory_states} states"
+        )
+    return {
+        "values": values,
+        "points_per_state": points_per_state,
+        "trajectory_states": trajectory_states,
+        "current_state": 0,
+    }
+
+
+def _apply_pattern_state(runtime: dict, state_index: int) -> None:
+    if state_index == runtime["current_state"]:
+        return
+    points_per_state = runtime["points_per_state"]
+    start = state_index * points_per_state * 2
+    values = runtime["values"]
+    azimuth_values = [values[start + index * 2] * 0.01 for index in range(points_per_state)]
+    azimuth = Vt.FloatArray([value if value < 180.0 else value - 360.0 for value in azimuth_values])
+    elevation = Vt.FloatArray(
+        [values[start + index * 2 + 1] * 0.01 - 10.0 for index in range(points_per_state)]
+    )
+    stage = runtime["stage"]
+    lidar = stage.GetPrimAtPath(LIDAR_PATH)
+    with Usd.EditContext(stage, stage.GetSessionLayer()):
+        lidar.GetAttribute(PATTERN_ATTRIBUTE_NAMES[0]).Set(azimuth)
+        lidar.GetAttribute(PATTERN_ATTRIBUTE_NAMES[1]).Set(elevation)
+    runtime["current_state"] = state_index
+
+
+def _on_pattern_update(runtime: dict) -> None:
+    timeline = omni.timeline.get_timeline_interface()
+    if not timeline.is_playing():
+        return
+    state_index = int(timeline.get_current_time() * 10.0 + 1.0e-6) % runtime["trajectory_states"]
+    _apply_pattern_state(runtime, state_index)
+
+
+def _start_pattern_driver(stage: Usd.Stage) -> dict:
+    runtime = _load_pattern_runtime(stage)
+    runtime["stage"] = stage
+    stream = omni.kit.app.get_app().get_update_event_stream()
+    runtime["subscription"] = stream.create_subscription_to_pop(
+        lambda _event: _on_pattern_update(runtime),
+        name="MID-360 non-repetitive trajectory driver",
+    )
+    print(
+        "[Mid360ROS2] Non-repetitive trajectory driver ready: "
+        f"{runtime['trajectory_states']} x 0.1 s states, 200,000 points/s"
+    )
+    return runtime
+
+
+def _stop_pattern_driver(runtime: dict) -> None:
+    pattern_runtime = runtime.pop("pattern_runtime", None)
+    if pattern_runtime is None:
+        return
+    pattern_runtime["subscription"] = None
+    stage = pattern_runtime["stage"]
+    layer = stage.GetSessionLayer()
+    edits = Sdf.BatchNamespaceEdit()
+    has_overrides = False
+    for name in PATTERN_ATTRIBUTE_NAMES:
+        property_path = Sdf.Path(LIDAR_PATH).AppendProperty(name)
+        if layer.GetAttributeAtPath(property_path) is not None:
+            edits.Add(Sdf.NamespaceEdit.Remove(property_path))
+            has_overrides = True
+    if has_overrides and not layer.Apply(edits):
+        carb.log_warn("[Mid360ROS2] Could not remove trajectory session overrides")
 
 
 def _require_ros2_bridge() -> None:
@@ -362,6 +474,7 @@ def _cleanup_runtime(runtime: dict, *, stop_timeline: bool) -> None:
     if stop_timeline:
         omni.timeline.get_timeline_interface().stop()
     _clear_selection()
+    _stop_pattern_driver(runtime)
 
     stage = runtime.get("stage")
     if stage is not None:
@@ -504,6 +617,7 @@ def main() -> None:
     try:
         gravity_scene_path = _disable_gravity_in_session(stage)
         _build_action_graph(stage, render_product_path)
+        pattern_runtime = _start_pattern_driver(stage)
     except Exception:
         if owns_render_product and render_product_handle is not None:
             render_product_handle.destroy()
@@ -517,6 +631,7 @@ def main() -> None:
         "owns_render_product": owns_render_product,
         "gravity_scene_path": gravity_scene_path,
         "graph_path": GRAPH_PATH,
+        "pattern_runtime": pattern_runtime,
     }
     globals()["_MID360_ROS2_RUNTIME"] = runtime
     vars(__main__)["_MID360_ROS2_RUNTIME"] = runtime

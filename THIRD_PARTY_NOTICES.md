@@ -9,6 +9,10 @@ repository code. The root `LICENSE` does not replace the licenses below.
 - InstinctLab torso-rooted training collision model: `project-instinct/InstinctLab`,
   commit `ba28d3d2655b15a19b729476a630937a19610a3b`, CC BY-NC 4.0. The full license
   is retained at `assets/g1_29dof_mode_13_5010/source/instinctlab/LICENSE`.
+- Livox MID-360 reference scan trajectory: `Livox-SDK/livox_laser_simulation`,
+  commit `1cce1073633a062b92e30243a4c2920e45551bb5`, MIT. The unmodified
+  `scan_mode/mid360.csv` and its license are retained under
+  `assets/mid360_pattern/`.
 - NVIDIA Isaac Sim schemas and runtime are external dependencies and are not
   redistributed here.
 - Livox and Unitree names are used only to identify compatible hardware/model
