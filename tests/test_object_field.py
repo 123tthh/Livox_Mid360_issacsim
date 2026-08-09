@@ -5,6 +5,8 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from PIL import Image
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENE_ROOT = ROOT / "tests/scenes/object_field"
@@ -19,8 +21,10 @@ class ObjectFieldTests(unittest.TestCase):
     def test_environment_is_self_built_and_self_contained(self) -> None:
         payload = ENVIRONMENT.read_text(encoding="utf-8")
         self.assertIn("custom double mid360Validation:radiusM = 5", payload)
-        self.assertIn("custom int mid360Validation:objectCount = 9", payload)
+        self.assertIn("custom int mid360Validation:objectCount = 10", payload)
         self.assertIn("custom bool mid360Validation:allObjectsTouchGround = 1", payload)
+        self.assertIn("custom double mid360Validation:projectionWallDistanceM = 4.75", payload)
+        self.assertIn("custom bool mid360Validation:angularProjectionTarget = 1", payload)
         self.assertNotIn("@", payload)
         for name in (
             "Box",
@@ -32,8 +36,29 @@ class ObjectFieldTests(unittest.TestCase):
             "Pyramid",
             "Wedge",
             "Arch",
+            "ProjectionWall",
         ):
             self.assertIn(f'"{name}"', payload)
+
+    def test_profile_specific_rviz_accumulation(self) -> None:
+        petal = (ROOT / "config/mid360_object_field_petal_4s.rviz").read_text()
+        rotary = (ROOT / "config/mid360_object_field_rotary_0p1s.rviz").read_text()
+        launcher = (ROOT / "scripts/run_rviz2_mid360.sh").read_text()
+        self.assertIn("Decay Time: 4.2", petal)
+        self.assertIn("MID360 Petal - full 4.2 s pattern", petal)
+        self.assertIn("Decay Time: 0.1", rotary)
+        self.assertIn("MID360 Rotary - one 0.1 s revolution", rotary)
+        self.assertIn("mid360_object_field_petal_4s.rviz", launcher)
+        self.assertIn("mid360_object_field_rotary_0p1s.rviz", launcher)
+
+    def test_angular_pattern_comparison_figure(self) -> None:
+        figure = ROOT / "docs/validation/MID360_Petal_vs_Rotary_Angular_Pattern.png"
+        with Image.open(figure) as image:
+            self.assertEqual(image.format, "PNG")
+            self.assertEqual(image.size, (1800, 920))
+        generator = (ROOT / "scripts/generate_scan_pattern_comparison.py").read_text()
+        self.assertIn("load_trajectory(TRAJECTORY)", generator)
+        self.assertIn("40 fixed elevation channels", generator)
 
     def test_petal_and_rotary_use_fixed_5010(self) -> None:
         for profile, path in SCENES.items():

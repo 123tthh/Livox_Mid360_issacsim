@@ -10,7 +10,8 @@ def Xform "ObjectField" (
 )
 {
     custom bool mid360Validation:allObjectsTouchGround = 1
-    custom int mid360Validation:objectCount = 9
+    custom int mid360Validation:objectCount = 10
+    custom double mid360Validation:projectionWallDistanceM = 4.75
     custom double mid360Validation:radiusM = 5
 
     def Cube "Ground" (
@@ -26,6 +27,18 @@ def Xform "ObjectField" (
 
     def "Objects"
     {
+        def Cube "ProjectionWall" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            custom bool mid360Validation:angularProjectionTarget = 1
+            color3f[] primvars:displayColor = [(0.62, 0.66, 0.7)]
+            double size = 1
+            float3 xformOp:scale = (5.5, 0.1, 3.2)
+            double3 xformOp:translate = (0, 4.75, 1.6)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
         def Cube "Box" (
             prepend apiSchemas = ["PhysicsCollisionAPI"]
         )

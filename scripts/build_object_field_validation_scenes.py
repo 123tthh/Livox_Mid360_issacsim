@@ -99,8 +99,9 @@ def build_environment(Gf, Kind, Sdf, Usd, UsdGeom, UsdPhysics) -> None:
     stage.SetDefaultPrim(root)
     Usd.ModelAPI(root).SetKind(Kind.Tokens.component)
     root.CreateAttribute("mid360Validation:radiusM", Sdf.ValueTypeNames.Double).Set(5.0)
-    root.CreateAttribute("mid360Validation:objectCount", Sdf.ValueTypeNames.Int).Set(9)
+    root.CreateAttribute("mid360Validation:objectCount", Sdf.ValueTypeNames.Int).Set(10)
     root.CreateAttribute("mid360Validation:allObjectsTouchGround", Sdf.ValueTypeNames.Bool).Set(True)
+    root.CreateAttribute("mid360Validation:projectionWallDistanceM", Sdf.ValueTypeNames.Double).Set(4.75)
 
     ground = UsdGeom.Cube.Define(stage, "/ObjectField/Ground")
     ground.CreateSizeAttr(1.0)
@@ -108,6 +109,16 @@ def build_environment(Gf, Kind, Sdf, Usd, UsdGeom, UsdPhysics) -> None:
     _translate(ground, Gf, (0.0, 0.0, -0.05))
     _set_color(ground, Gf, (0.18, 0.20, 0.22))
     _static_collision(ground.GetPrim(), UsdPhysics)
+
+    projection_wall = UsdGeom.Cube.Define(stage, "/ObjectField/Objects/ProjectionWall")
+    projection_wall.CreateSizeAttr(1.0)
+    projection_wall.AddScaleOp().Set(Gf.Vec3f(5.5, 0.10, 3.2))
+    _translate(projection_wall, Gf, (0.0, 4.75, 1.6))
+    _set_color(projection_wall, Gf, (0.62, 0.66, 0.70))
+    projection_wall.GetPrim().CreateAttribute(
+        "mid360Validation:angularProjectionTarget", Sdf.ValueTypeNames.Bool
+    ).Set(True)
+    _static_collision(projection_wall.GetPrim(), UsdPhysics)
 
     box = UsdGeom.Cube.Define(stage, "/ObjectField/Objects/Box")
     box.CreateSizeAttr(1.0)

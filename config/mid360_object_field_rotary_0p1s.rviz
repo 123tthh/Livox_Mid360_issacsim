@@ -27,14 +27,13 @@ Visualization Manager:
       Class: rviz_default_plugins/PointCloud2
       Color: 0; 255; 80
       Color Transformer: FlatColor
-      # Accumulate short RTX slices into a dense view without changing the
-      # published 200 kpoints/s stream or the non-repetitive trajectory.
-      Decay Time: 0.5
+      # Exactly one 10 Hz revolution; repeated rings are not accumulated.
+      Decay Time: 0.1
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
-      Name: MID360 PointCloud2
+      Name: MID360 Rotary - one 0.1 s revolution
       Position Transformer: XYZ
       Queue Size: 20
       Selectable: true

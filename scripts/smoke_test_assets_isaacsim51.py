@@ -218,8 +218,8 @@ def validate_object_field_scene(profile: str, relative_path: str) -> None:
     if not anchor.IsA(UsdPhysics.FixedJoint):
         raise RuntimeError(f"missing G1 world anchor in {profile}")
     objects = stage.GetPrimAtPath("/World/ObjectField/Objects").GetChildren()
-    if len(objects) != 9:
-        raise RuntimeError(f"expected 9 object groups in {profile}, found {len(objects)}")
+    if len(objects) != 10:
+        raise RuntimeError(f"expected 10 object groups in {profile}, found {len(objects)}")
     bbox_cache = UsdGeom.BBoxCache(
         Usd.TimeCode.Default(), [UsdGeom.Tokens.default_, UsdGeom.Tokens.render]
     )
@@ -233,6 +233,10 @@ def validate_object_field_scene(profile: str, relative_path: str) -> None:
             raise RuntimeError(f"object does not touch ground: {object_prim.GetPath()} z={minimum[2]}")
         if center_x * center_x + center_y * center_y > 25.0:
             raise RuntimeError(f"object center is outside 5 m: {object_prim.GetPath()}")
+
+    projection_wall = stage.GetPrimAtPath("/World/ObjectField/Objects/ProjectionWall")
+    if projection_wall.GetAttribute("mid360Validation:angularProjectionTarget").Get() is not True:
+        raise RuntimeError(f"missing angular projection target in {profile}")
 
     robot_box = bbox_cache.ComputeWorldBound(stage.GetPrimAtPath("/World/G1")).ComputeAlignedBox()
     robot_min_z = float(robot_box.GetMin()[2])
