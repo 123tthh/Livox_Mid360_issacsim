@@ -124,7 +124,16 @@ G1 5010 Mode13 固定关节、Petal Scan、自建九类物体场：
 
 ![RViz2 点云总览](docs/validation/screenshots/MID360_G1_5010_Mode13_PointCloud_Overview_RViz2.png)
 
-以上四张均为 Petal 配置；当前 README 没有将其标记为 Rotary 对比图。
+以上四张均为 Petal 配置。
+
+同一机器人、同一物体场切换为 Rotary Scan（确定性 40 线重复扫描）：
+
+![Isaac Sim 5.1 Rotary 自建物体场与固定 G1 5010 Mode13](docs/validation/screenshots/MID360_G1_5010_Mode13_Rotary_Object_Field_IsaacSim51.png)
+
+![RViz2 中的 MID360 40 线 Rotary 点云](docs/validation/screenshots/MID360_G1_5010_Mode13_Rotary_PointCloud_RViz2.png)
+
+Rotary 图中规则、重复的扫描线可作为对照；Petal 图来自 40 个连续变化的 0.1 s
+官方方向状态。两组均使用相同的 0.5 s RViz 显示累积，不改变发布端数据。
 
 `tests/scenes/` 提供可直接打开的 6、10、15 cm 阶梯 Stage。每个 Stage 默认引用 Petal Scan
 独立雷达，带灯光和 PhysicsScene；底层阶梯 USD 完全自包含，不依赖 Lidar_Hiking：
