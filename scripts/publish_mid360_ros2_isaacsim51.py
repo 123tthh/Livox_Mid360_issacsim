@@ -1,4 +1,4 @@
-"""Publish a G1-mounted MID360 non-repetitive scan as ROS 2 PointCloud2.
+"""Publish a G1-mounted MID360 Petal or Rotary scan as ROS 2 PointCloud2.
 
 Run this whole file from Window > Script Editor after opening either bundled
 G1 USD in Isaac Sim 5.1 with the ROS 2 Bridge enabled. It builds this graph:
@@ -115,7 +115,8 @@ def _resolve_robot_instance(stage: Usd.Stage) -> None:
 
     if not candidates:
         raise RuntimeError(
-            "No G1 Mid360 instance found. Add/reference G1_29dof_mode_13_5010_mid360.usd first."
+            "No G1 MID-360 instance found. Add/reference one of the standardized "
+            "Petal Scan or Rotary Scan robot assets first."
         )
     if len(candidates) > 1:
         roots = [str(prim.GetPath())[: -len(LIDAR_SUFFIX)] for prim in candidates]
@@ -156,7 +157,7 @@ def _clear_selection() -> None:
         pass
 
 
-def _validate_lidar(stage: Usd.Stage) -> None:
+def _validate_lidar(stage: Usd.Stage) -> str:
     lidar = stage.GetPrimAtPath(LIDAR_PATH)
     if not lidar.IsValid() or lidar.GetTypeName() != "OmniLidar":
         raise RuntimeError(f"No OmniLidar at {LIDAR_PATH}. Run add_mid360_native_approx_isaacsim51.py first.")
@@ -178,23 +179,34 @@ def _validate_lidar(stage: Usd.Stage) -> None:
     emitters = lidar.GetAttribute(core + "numberOfEmitters").Get()
     scan_type = str(lidar.GetAttribute(core + "scanType").Get())
     report_rate = lidar.GetAttribute(core + "reportRateBaseHz").Get()
-    if int(emitters) != 20_000 or scan_type != "SOLID_STATE" or int(report_rate) != 10:
-        raise RuntimeError(f"Unexpected LiDAR profile: emitters={emitters}, scanType={scan_type!r}")
-
     pattern = stage.GetPrimAtPath(PATTERN_PATH)
-    if not pattern.IsValid():
-        raise RuntimeError(f"No embedded MID-360 non-repetitive trajectory at {PATTERN_PATH}")
-    expected_pattern = {
-        "encoding": PATTERN_ENCODING,
-        "pointRateHz": 200_000,
-        "scanRateHz": 10,
-        "pointsPerState": 20_000,
-        "trajectoryStates": 40,
-    }
-    for name, expected in expected_pattern.items():
-        actual = pattern.GetAttribute(f"lidarHiking:{name}").Get()
-        if actual != expected:
-            raise RuntimeError(f"Unexpected pattern {name}: {actual!r} != {expected!r}")
+    if scan_type == "SOLID_STATE":
+        if int(emitters) != 20_000 or int(report_rate) != 10 or not pattern.IsValid():
+            raise RuntimeError(
+                f"Invalid Petal Scan profile: emitters={emitters}, reportRate={report_rate}, "
+                f"pattern={pattern.IsValid()}"
+            )
+        expected_pattern = {
+            "encoding": PATTERN_ENCODING,
+            "pointRateHz": 200_000,
+            "scanRateHz": 10,
+            "pointsPerState": 20_000,
+            "trajectoryStates": 40,
+        }
+        for name, expected in expected_pattern.items():
+            actual = pattern.GetAttribute(f"lidarHiking:{name}").Get()
+            if actual != expected:
+                raise RuntimeError(f"Unexpected pattern {name}: {actual!r} != {expected!r}")
+        profile = "petal_scan"
+    elif scan_type == "ROTARY":
+        if int(emitters) != 40 or int(report_rate) != 5000 or pattern.IsValid():
+            raise RuntimeError(
+                f"Invalid Rotary Scan profile: emitters={emitters}, reportRate={report_rate}, "
+                f"unexpectedPattern={pattern.IsValid()}"
+            )
+        profile = "rotary_scan"
+    else:
+        raise RuntimeError(f"Unsupported MID-360 scanType={scan_type!r}")
 
     mount = stage.GetPrimAtPath(MOUNT_PATH)
     if not mount.IsValid() or not mount.IsA(UsdGeom.Xformable):
@@ -219,6 +231,8 @@ def _validate_lidar(stage: Usd.Stage) -> None:
     print(
         "[Mid360ROS2] LiDAR and SLAM IMU are colocated/aligned; FAST-LIO extrinsic_T=0 and extrinsic_R=I are required"
     )
+    print(f"[Mid360ROS2] Validated asset profile: {profile}")
+    return profile
 
 
 def _load_pattern_runtime(stage: Usd.Stage) -> dict:
@@ -600,10 +614,10 @@ def main() -> None:
 
     stage = omni.usd.get_context().get_stage()
     if stage is None:
-        raise RuntimeError("Open a scene containing G1_29dof_mode_13_5010_mid360.usd first")
+        raise RuntimeError("Open a scene containing a standardized G1 + MID-360 asset first")
 
     _resolve_robot_instance(stage)
-    _validate_lidar(stage)
+    profile = _validate_lidar(stage)
     _require_ros2_bridge()
     _require_gpu_lidar_output()
 
@@ -617,7 +631,7 @@ def main() -> None:
     try:
         gravity_scene_path = _disable_gravity_in_session(stage)
         _build_action_graph(stage, render_product_path)
-        pattern_runtime = _start_pattern_driver(stage)
+        pattern_runtime = _start_pattern_driver(stage) if profile == "petal_scan" else None
     except Exception:
         if owns_render_product and render_product_handle is not None:
             render_product_handle.destroy()

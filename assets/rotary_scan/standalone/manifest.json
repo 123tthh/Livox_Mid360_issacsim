@@ -1,0 +1,59 @@
+{
+  "asset": "Livox_MID360_Rotary_Scan.usd",
+  "composition": {
+    "cad_reference": "../../common/Livox_MID360_CAD.usd",
+    "self_contained_sensor": true
+  },
+  "coordinate_system": {
+    "meters_per_unit": 1,
+    "up_axis": "Z"
+  },
+  "default_prim": "/MID360",
+  "files": {
+    "Livox_MID360_Rotary_Scan.usd": {
+      "bytes": 4217,
+      "sha256": "9c08126d7b8ab71183ce9967d268a7f8ed41fc75ab7950a13f4deb7d2d0f0ac3"
+    }
+  },
+  "form": "standalone",
+  "imu": {
+    "colocated_and_aligned_with_lidar": true,
+    "prim": "/MID360/torso_link/mid360_imu",
+    "rate_hz": 200,
+    "ros2_frame": "mid360_link",
+    "ros2_topic": "/mid360/imu",
+    "sensor_period_s": 0.005,
+    "type": "IsaacImuSensor"
+  },
+  "mid360": {
+    "elevation_deg": [
+      -7.0,
+      52.0
+    ],
+    "emitters": 40,
+    "model": "MID-360 40-line rotary approximation",
+    "mount_roll_deg": 0.0,
+    "mount_translation_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "points_per_second": 200000,
+    "prim": "/MID360/torso_link/mid360_link/mid360_native_approx",
+    "profile": "rotary_scan",
+    "range_m": [
+      0.1,
+      70.0
+    ],
+    "report_rate_per_emitter_hz": 5000,
+    "robot_frame_elevation_deg": [
+      -52.0,
+      7.0
+    ],
+    "scan_rate_hz": 10,
+    "scan_type": "ROTARY",
+    "type": "OmniLidar"
+  },
+  "profile": "rotary_scan",
+  "schema_version": 1
+}

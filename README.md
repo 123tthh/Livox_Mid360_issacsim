@@ -1,129 +1,132 @@
-# Livox MID360 for Isaac Sim
+# Livox MID-360 for Isaac Sim 5.1
 
-面向 NVIDIA Isaac Sim 5.1 的 Livox MID360 仿真资产，包含可直接引用的
-Unitree G1 4010 与 5010 两套 29-DoF 机器人 USD，以及运行时 ROS 2
-`sensor_msgs/PointCloud2` 发布脚本。
+项目规范名：**Livox_MID360_IsaacSim**。
 
-> 仓库名沿用 `issacsim`，产品名和文档统一写作 **Isaac Sim**。
+本仓库提供两套明确分离的 MID-360 仿真扫描配置，每套都包含独立雷达、
+Unitree G1 4010 含雷达机器人和 Unitree G1 5010 含雷达机器人，共六份可发布资产。
 
-## 仓库内容
+## 资产矩阵
 
-| 资产 | G1 版本 | 电机/模式 | USD |
+| 扫描配置 | 独立 MID-360 | G1 4010 + MID-360 | G1 5010 + MID-360 |
 | --- | --- | --- | --- |
-| 4010 基线 | `g1_29dof_rev_1_0` | wrist 4010，mode_machine 5 | `assets/g1_29dof_rev_1_0/G1_29dof_mid360.usd` |
-| 5010 当前版 | `g1_29dof_mode_13` | wrist 5010，mode_machine 13 | `assets/g1_29dof_mode_13_5010/G1_29dof_mode_13_5010_mid360.usd` |
+| Petal Scan（花瓣扫描） | `assets/petal_scan/standalone/Livox_MID360_Petal_Scan.usd` | `assets/petal_scan/g1_4010/Unitree_G1_4010_MID360_Petal_Scan.usd` | `assets/petal_scan/g1_5010/Unitree_G1_5010_MID360_Petal_Scan.usd` |
+| Rotary Scan（普通旋转近似） | `assets/rotary_scan/standalone/Livox_MID360_Rotary_Scan.usd` | `assets/rotary_scan/g1_4010/Unitree_G1_4010_MID360_Rotary_Scan.usd` | `assets/rotary_scan/g1_5010/Unitree_G1_5010_MID360_Rotary_Scan.usd` |
 
-两份 USD 都是展平后的单文件资产，没有外部 USD 引用，也没有把 ROS、机器人状态和运动控制
-Action Graph 固化进资产。点云发布图由 `scripts/publish_mid360_ros2_isaacsim51.py`
-在 Session Layer 中独立创建，便于修改且不会污染 USD。
+共用资源位于 `assets/common/`：
 
-## 当前 MID360 配置
+- `Livox_MID360_CAD.usd`：由用户提供的 STEP 装配转换得到的 CAD 几何；
+- `mid360_official_pattern/mid360.csv`：Livox 官方四秒参考轨迹；
+- `g1_5010_support/`：5010 机器人来源、网格和训练碰撞 URDF。
 
-4010 与 5010 现在使用相同的 **非重复花瓣扫描轨迹**。轨迹来自 Livox 官方
-`Livox-SDK/livox_laser_simulation` 的 `mid360.csv`；800,000 条有序方向构成
-4 秒参考窗口。为满足 Isaac Sim 5.1 单传感器 5 MiB 属性上限，完整轨迹压缩存入 USD 内的
-兄弟 Scope，`OmniLidar` 保持一个固定长度 state，ROS 运行脚本按 10 Hz 只替换数组值：
+## Petal Scan（花瓣扫描）
 
-| 参数 | 当前值 | 说明 |
-| --- | --- | --- |
-| USD 类型 | `OmniLidar` | Isaac Sim RTX LiDAR |
-| `scanType` | `SOLID_STATE` | Livox 旋转镜混合固态扫描 |
-| 轨迹状态 | 40 个 | 每个状态对应连续 0.1 s 真机轨迹 |
-| RTX emitter state | 1 个 | 固定数组长度，运行期 10 Hz 换值，规避 5 MiB 上限 |
-| `numberOfEmitters` | 20,000/状态 | 10 Hz × 20,000 = 200,000 points/s |
-| `numberOfChannels` | 20,000 | Core 固态模型中每条独立定时射线映射一个通道；官方 CSV 不含物理激光器 ID |
-| `scanRateBaseHz` / report rate | 10 Hz / 10 Hz | 每个状态输出一个 0.1 s 点云帧 |
-| 单点发射时序 | 5 μs | 每帧 `0 … 99.995 ms`，支持运动畸变 |
-| 传感器坐标系标称俯仰 | -7° 到 +52° | 官方规格的 59° 竖直 FOV |
-| 参考轨迹实际俯仰 | 约 -7.2123° 到 +52.164° | 官方表格的亚角度边缘摆动 |
-| 安装滚转 | 180° | 倒装后机器人坐标系覆盖约 -52° 到 +7° |
-| 5010 安装位移 | `[0.0002835, 0.00003, 0.41618]` m | 相对 `torso_link` |
-| 最小/最大量程 | 0.1 m / 70 m | 10% 反射率保证距离按 40 m 记录 |
-| 点云话题 | `/mid360/points` | `sensor_msgs/PointCloud2` |
-| 点云 frame | `mid360_link` | 同时发布机器人根到雷达安装座的 `/tf` |
-| 时间 | Isaac simulation time | `useSystemTime=false`，停止后不重置 |
-| ROS 发布 | 每个渲染帧，不跳帧 | `fullScan=false`，避免 Isaac Sim 5.1 累积全扫描崩溃路径 |
+Petal Scan 使用 Livox 官方 `livox_laser_simulation` 的 800,000 条有序方向，
+在四秒参考窗口内形成非重复花瓣覆盖：
 
-Isaac Sim 5.1 的 ROS 2 helper 仍使用稳定的 `fullScan=false` 路径，因此 FAST-LIO 应在下游按
-**0.1 s** 聚合所有渲染帧切片；不要通过
-丢帧或仅发布 0.47 倍点云来降载。LiDAR 与配套仿真 IMU 在资产中同位同向，因此该仿真合同
-要求 FAST-LIO 使用 `extrinsic_T: [0, 0, 0]`、`extrinsic_R: I`，不能直接套用真机
-MID360 标定外参。
+| 参数 | 值 |
+| --- | --- |
+| `scanType` | `SOLID_STATE` |
+| 输出点率 | 200,000 points/s |
+| 扫描帧率 | 10 Hz |
+| 轨迹状态 | 40 × 0.1 s |
+| 每状态射线 | 20,000 |
+| 单点时序 | 5 μs |
+| 参考窗口 | 4 s；之后循环 |
+| 标称垂直 FOV | -7° 到 +52° |
 
-## 修改 MID360 参数
+Isaac Sim 5.1 对单传感器属性有大小限制，因此 USD 内的 OmniLidar 始终保留一个
+20,000-ray RTX state，运行驱动器每 0.1 秒替换同长度数组。完整轨迹压缩保存在雷达旁的
+`mid360_nonrepetitive_pattern` Scope 中。
 
-推荐复制资产后修改，并同步更新对应 `manifest.json`：
+## Rotary Scan（普通雷达）
 
-1. 在 Isaac Sim Stage 中展开机器人，选择
-   `torso_link/mid360_link/mid360_native_approx`。
-2. 在 Property 面板的 Omni Sensor Generic LiDAR API 中修改：
-   - 扫描频率：`omni:sensor:Core:scanRateBaseHz`；
-   - 发射线数量：`omni:sensor:Core:numberOfEmitters`；
-   - 扫描类型：`omni:sensor:Core:scanType`；
-   - 每线 report rate、各 emitter 的方位/俯仰角、量程和反射率参数。
-3. 修改安装位置或方向时，选择父节点 `mid360_link`；LiDAR 与
-   `mid360_imu` 必须应用完全相同的变换，否则 FAST-LIO 地图会倾斜或重叠。
-4. RTX state 的 `azimuthDeg`、`elevationDeg`、`fireTimeNs`、`channelId` 和 `bank`
-   必须各有 20,000 项；完整 40-state 压缩轨迹由生成器维护，不能直接删除兄弟 Scope。
-5. 修改扫描频率或渲染帧率时，要同步修改逐点时间和下游累积窗口，保证统一时间戳。
-6. 保存为新文件并运行 `python scripts/validate_assets.py`，不要直接覆盖已发布的基准资产。
+Rotary Scan 保留原项目的确定性 40 线旋转近似，适用于调试、性能基线和不需要真机花纹的场景：
 
-用 Livox 官方轨迹重新写入两份资产：
+| 参数 | 值 |
+| --- | --- |
+| `scanType` | `ROTARY` |
+| emitters | 40 |
+| 每线 report rate | 5,000 Hz |
+| 扫描频率 | 10 Hz |
+| 目标点率 | 40 × 5,000 = 200,000 points/s |
+| 垂直覆盖 | -7° 到 +52° |
 
-```bash
-/path/to/isaac-sim/python.sh scripts/apply_mid360_nonrepetitive_profile.py
-```
+Rotary Scan 不包含花瓣轨迹 Scope，也不启动运行时状态切换器。
 
-5010 可通过 `scripts/build_g1_5010_mid360_asset.py` 重建。脚本从 4010 USD 复制
-`mid360_link`，因此先修改 4010 传感器源，再重建 5010，可保证两版本参数一致。
+## 机器人安装合同
 
-## 使用
+4010 和 5010 的雷达安装保持一致：
 
-1. 使用 Isaac Sim 5.1 打开任一 USD，启用 `isaacsim.ros2.bridge`，并确保
+- 相对 `torso_link` 平移：`[0.0002835, 0.00003, 0.41618]` m；
+- 滚转：180° 倒装；
+- LiDAR 和 `mid360_imu` 同位同向；
+- IMU 类型：`IsaacImuSensor`，周期 `0.005 s`（200 Hz）；
+- ROS 点云 frame：`mid360_link`；
+- ROS IMU 话题：`/mid360/imu`，frame：`mid360_link`；
+- TF：机器人根节点到 `mid360_link`；
+- FAST-LIO 仿真外参：`extrinsic_T=[0,0,0]`、`extrinsic_R=I`。
+
+两份 G1 USD 都是展平的单文件机器人资产，不固化运动策略、建图或控制 Action Graph。
+
+## Isaac Sim 5.1 使用
+
+1. 直接打开或引用资产矩阵中的任意 USD。
+2. 启用 `isaacsim.ros2.bridge`，并设置
    `/app/sensors/nv/lidar/outputBufferOnGPU=true`。
-2. 打开 **Window → Script Editor**，载入并运行
-   `scripts/publish_mid360_ros2_isaacsim51.py`。
-3. 启动 ROS 2 消费端后按 Play。脚本默认保持时间线暂停，不会抢占运动控制。
-4. 清理临时发布图：在 Script Editor 执行 `cleanup_mid360_ros2()`。
+3. 在 Script Editor 运行 `scripts/publish_mid360_ros2_isaacsim51.py`。
+4. Petal Scan 会自动启动 40 状态驱动；Rotary Scan 直接使用 USD 内的固定旋转配置。
+5. 清理运行时图：调用 `cleanup_mid360_ros2()`。
 
-场景中有多个 G1 时，在运行发布脚本前设置：
+读取 IMU 时，将各资产 README 中列出的 `mid360_imu` Prim 接入
+`IsaacReadIMU` 和 `ROS2PublishImu`。六个资产各自目录中的 `README.md`
+分别给出了 Prim 路径、ROS 2 话题和 FAST-LIO 外参设置。
 
-```python
-MID360_ROBOT_ROOT_PATH = "/World/G1_A"
-```
+独立资产会相对引用 `assets/common/Livox_MID360_CAD.usd`，克隆或复制时应保留仓库目录结构。
 
-验证文件完整性：
+## 重建与验证
 
-```bash
-python3 scripts/validate_assets.py
-python3 -m unittest discover -s tests -v
-```
-
-将两套资产安装到 Lidar_Hiking 工程的兼容路径：
+重新写入 Petal Scan 机器人配置：
 
 ```bash
-python3 scripts/install_into_lidar_hiking.py /path/to/Lidar_Hiking
+/path/to/isaac-sim/python.sh scripts/apply_mid360_petal_profile.py
 ```
 
-安装器还会同步组合场景使用的 Isaac Sim 5.1 ROS 2 发布脚本，使 40-state
-轨迹驱动器随 `/mid360/points` 发布自动启动。
+重建独立资产：
 
-## 独立 MID-360 资产
+```bash
+/path/to/isaac-sim/python.sh scripts/build_mid360_standalone_assets.py \
+  assets/common/Livox_MID360_CAD.usd \
+  assets/petal_scan/standalone/Livox_MID360_Petal_Scan.usd \
+  --sensor-source assets/petal_scan/g1_4010/Unitree_G1_4010_MID360_Petal_Scan.usd
 
-`standalone/MID360_nonrepetitive.usd` 可直接作为独立组件导入 Isaac Sim 5.1；
-它相对引用同目录的 `mid360_cad.usd`，并包含与机器人组合资产相同的完整压缩轨迹。
-运行 `standalone/drive_mid360_nonrepetitive_isaacsim51.py` 可在时间轴播放期间切换
-全部 40 个非重复状态。详细用法见 `standalone/README.md`。
+/path/to/isaac-sim/python.sh scripts/build_mid360_standalone_assets.py \
+  assets/common/Livox_MID360_CAD.usd \
+  assets/rotary_scan/standalone/Livox_MID360_Rotary_Scan.usd \
+  --sensor-source assets/rotary_scan/g1_4010/Unitree_G1_4010_MID360_Rotary_Scan.usd
+```
+
+重建后补入/刷新六个资产的 IMU：
+
+```bash
+/path/to/isaac-sim/python.sh scripts/add_mid360_imu_isaacsim51.py
+```
+
+同步清单并运行测试：
+
+```bash
+python3 scripts/update_asset_metadata.py
+make check
+```
 
 ## 限制
 
-- 本仓库只提供传感器、机器人组合资产和 ROS 2 发布，不包含 Lidar_Hiking 策略、训练场景或
-  FAST-LIO 工程。
-- 轨迹是 Livox 官方仿真仓库提供的 4 秒参考窗口，窗口内非重复，但状态序列在第 4 秒后循环；
-  它用于逼近空间覆盖和时序，不替代逐台真机光学校准。
-- `fullScan=true` 在已验证的 Isaac Sim 5.1.0-rc.19 环境中不稳定，默认保持关闭。
+- Petal Scan 在官方四秒参考窗口内非重复，第 4 秒后循环，不等同于无限时长真机光学模型。
+- Rotary Scan 是可重复的 40 线近似，不用于评估真实 MID-360 花瓣覆盖误差。
+- `fullScan=true` 在验证使用的 Isaac Sim 5.1.0-rc.19 中不稳定，ROS 发布脚本保持
+  `fullScan=false`，需要完整 10 Hz 扫描时应在下游聚合 0.1 秒切片。
+- 仓库只提供传感器与机器人组合资产，不包含 Lidar_Hiking 策略或 FAST-LIO 工程。
 
 ## 来源与许可证
 
-本仓库原创脚本使用根目录 MIT License。Unitree G1、InstinctLab 训练碰撞模型及派生资产仍受
-各自许可证约束，详见 `THIRD_PARTY_NOTICES.md` 和资产目录内保留的许可证。
+原创脚本使用根目录 MIT License。Livox 轨迹、Unitree G1、InstinctLab 派生资源及 CAD
+来源说明见 `THIRD_PARTY_NOTICES.md` 和 `assets/common/` 内保留的许可证。

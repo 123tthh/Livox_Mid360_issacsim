@@ -1,15 +1,62 @@
 {
   "assets": {
-    "g1-4010-mid360": {
-      "path": "assets/g1_29dof_rev_1_0/G1_29dof_mid360.usd",
-      "sha256": "a2ee53e6e8c02a4f0bb9f77f9d70b6db8769f2b336779dc5c46bdb1bebc4fc4b",
+    "g1-4010-mid360-petal": {
+      "form": "robot",
+      "includes_imu": true,
+      "path": "assets/petal_scan/g1_4010/Unitree_G1_4010_MID360_Petal_Scan.usd",
+      "profile": "petal_scan",
+      "sha256": "3053f81679274b4d10e4bdf847407f0668fddd34efe081d94b0cbb0043936662",
       "wrist_motor": "4010"
     },
-    "g1-5010-mid360": {
-      "path": "assets/g1_29dof_mode_13_5010/G1_29dof_mode_13_5010_mid360.usd",
-      "sha256": "84184da46c529481561a7739f1b60d6c148f9414ccdb12d6c4f05c5e7bad41a5",
+    "g1-4010-mid360-rotary": {
+      "form": "robot",
+      "includes_imu": true,
+      "path": "assets/rotary_scan/g1_4010/Unitree_G1_4010_MID360_Rotary_Scan.usd",
+      "profile": "rotary_scan",
+      "sha256": "1bbf63c9e7f9af73ffe46a8b83f242d797916cb9154dd0ce1b2f86238f3de1fd",
+      "wrist_motor": "4010"
+    },
+    "g1-5010-mid360-petal": {
+      "form": "robot",
+      "includes_imu": true,
+      "path": "assets/petal_scan/g1_5010/Unitree_G1_5010_MID360_Petal_Scan.usd",
+      "profile": "petal_scan",
+      "sha256": "5afaa6a92088349c90dad5fe5b583a6055fe6a96c5096f139674868fafe4438e",
       "wrist_motor": "5010"
+    },
+    "g1-5010-mid360-rotary": {
+      "form": "robot",
+      "includes_imu": true,
+      "path": "assets/rotary_scan/g1_5010/Unitree_G1_5010_MID360_Rotary_Scan.usd",
+      "profile": "rotary_scan",
+      "sha256": "560aa3ca23d43391da0893d3d2c22d78613c345aaf333e611d56fe909fd5a013",
+      "wrist_motor": "5010"
+    },
+    "mid360-petal-standalone": {
+      "form": "standalone",
+      "includes_imu": true,
+      "path": "assets/petal_scan/standalone/Livox_MID360_Petal_Scan.usd",
+      "profile": "petal_scan",
+      "sha256": "3a1ea3afd1d2ba23bf3c489c83eae3a2eb3a505668a54bf3156884ca075fe705"
+    },
+    "mid360-rotary-standalone": {
+      "form": "standalone",
+      "includes_imu": true,
+      "path": "assets/rotary_scan/standalone/Livox_MID360_Rotary_Scan.usd",
+      "profile": "rotary_scan",
+      "sha256": "9c08126d7b8ab71183ce9967d268a7f8ed41fc75ab7950a13f4deb7d2d0f0ac3"
     }
   },
-  "schema_version": 1
+  "common_files": {
+    "cad": {
+      "path": "assets/common/Livox_MID360_CAD.usd",
+      "sha256": "fd1aafe5aaf726e6a27a57bf4d7c2becc221ead680d48e13e99c24868fa5d024"
+    },
+    "official_pattern": {
+      "path": "assets/common/mid360_official_pattern/mid360.csv",
+      "sha256": "aa1fc08b6a4400608dbd6ee832b7ea3a9c3c37197e734f60f58fe5abf762269a"
+    }
+  },
+  "project": "Livox_MID360_IsaacSim",
+  "schema_version": 2
 }

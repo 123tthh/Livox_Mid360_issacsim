@@ -28,15 +28,17 @@ from pathlib import Path
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-ASSET_DIR = REPOSITORY_ROOT / "assets/g1_29dof_mode_13_5010"
-OFFICIAL_DESCRIPTION_DIR = ASSET_DIR / "source/unitree_ros/robots/g1_description"
+SUPPORT_DIR = REPOSITORY_ROOT / "assets/common/g1_5010_support"
+OFFICIAL_DESCRIPTION_DIR = SUPPORT_DIR / "unitree_ros/robots/g1_description"
 OFFICIAL_URDF = OFFICIAL_DESCRIPTION_DIR / "g1_29dof_mode_13.urdf"
-INSTINCTLAB_SOURCE_DIR = ASSET_DIR / "source/instinctlab"
+INSTINCTLAB_SOURCE_DIR = SUPPORT_DIR / "instinctlab"
 TRAINING_URDF = INSTINCTLAB_SOURCE_DIR / "g1_29dof_torsoBase_popsicle_with_shoe.urdf"
-CURRENT_LIDAR_USD = REPOSITORY_ROOT / "assets/g1_29dof_rev_1_0/G1_29dof_mid360.usd"
-DERIVED_URDF = ASSET_DIR / "g1_29dof_mode_13_5010_torsoBase_popsicle_with_shoe.urdf"
-OUTPUT_USD = ASSET_DIR / "G1_29dof_mode_13_5010_mid360.usd"
-MANIFEST_PATH = ASSET_DIR / "manifest.json"
+CURRENT_LIDAR_USD = (
+    REPOSITORY_ROOT / "assets/petal_scan/g1_4010/Unitree_G1_4010_MID360_Petal_Scan.usd"
+)
+DERIVED_URDF = SUPPORT_DIR / "Unitree_G1_5010_Training_Collision.urdf"
+OUTPUT_USD = REPOSITORY_ROOT / "assets/petal_scan/g1_5010/Unitree_G1_5010_MID360_Petal_Scan.usd"
+MANIFEST_PATH = OUTPUT_USD.parent / "manifest.json"
 UNITREE_REPOSITORY = "https://github.com/unitreerobotics/unitree_ros"
 UNITREE_COMMIT = "f3772ce54c56ef2d34c6aee8100bc768896c7d19"
 INSTINCTLAB_REPOSITORY = "https://github.com/project-instinct/InstinctLab"
@@ -75,7 +77,7 @@ def derive_mode13_training_urdf(
     training_urdf: str | Path,
     official_mode13_urdf: str | Path,
     output_urdf: str | Path,
-    mesh_prefix: str = "source/unitree_ros/robots/g1_description/meshes",
+    mesh_prefix: str = "unitree_ros/robots/g1_description/meshes",
 ) -> dict[str, object]:
     """Apply Unitree's complete 4010-to-5010 wrist delta to the training URDF."""
 
@@ -191,12 +193,9 @@ def write_manifest(
             "unitree_mesh_tree_sha256": _tree_sha256(official_urdf.parent, mesh_paths),
             "instinctlab_repository": INSTINCTLAB_REPOSITORY,
             "instinctlab_commit": INSTINCTLAB_COMMIT,
-            "training_collision_urdf": (
-                "assets/g1_29dof_mode_13_5010/source/instinctlab/"
-                "g1_29dof_torsoBase_popsicle_with_shoe.urdf"
-            ),
+            "training_collision_urdf": str(TRAINING_URDF.relative_to(REPOSITORY_ROOT)),
             "training_collision_urdf_sha256": _sha256(TRAINING_URDF),
-            "mid360_source": "assets/g1_29dof_rev_1_0/G1_29dof_mid360.usd",
+            "mid360_source": str(lidar_usd.relative_to(REPOSITORY_ROOT)),
             "mid360_source_sha256": _sha256(lidar_usd),
         },
         "composition": {
@@ -223,23 +222,14 @@ def write_manifest(
         "mid360": {
             "prim": composed_summary["mid360_prim"],
             "type": "OmniLidar",
-            "model": "MID-360 official non-repetitive pattern replay",
-            "scan_type": "SOLID_STATE",
+            "model": composed_summary["mid360_model"],
+            "scan_type": composed_summary["mid360_scan_type"],
             "scan_rate_hz": composed_summary["mid360_scan_rate_hz"],
-            "report_rate_hz": 10,
-            "emitters_per_state": composed_summary["mid360_emitters"],
-            "rtx_emitter_states": 1,
-            "trajectory_states": 40,
-            "channels": 20_000,
+            "report_rate_hz": composed_summary["mid360_report_rate_hz"],
+            "emitters": composed_summary["mid360_emitters"],
             "points_per_second": 200000,
             "nominal_elevation_deg": [-7.0, 52.0],
-            "trajectory_elevation_deg": [-7.2123, 52.164],
             "robot_frame_nominal_elevation_deg": [-52.0, 7.0],
-            "trajectory_duration_s": 4.0,
-            "trajectory_points": 800000,
-            "trajectory_source": "assets/mid360_pattern/mid360.csv",
-            "trajectory_sha256": "aa1fc08b6a4400608dbd6ee832b7ea3a9c3c37197e734f60f58fe5abf762269a",
-            "runtime_pattern_driver": "scripts/publish_mid360_ros2_isaacsim51.py",
             "mount_translation_m": [0.0002835, 0.00003, 0.41618],
             "mount_roll_deg": 180.0,
             "range_m": [0.1, 70.0],
@@ -249,6 +239,29 @@ def write_manifest(
             derived_urdf.name: {"bytes": derived_urdf.stat().st_size, "sha256": _sha256(derived_urdf)},
         },
     }
+    if composed_summary["mid360_scan_type"] == "SOLID_STATE":
+        manifest["mid360"].update(
+            {
+                "profile": "petal_scan",
+                "emitters_per_state": composed_summary["mid360_emitters"],
+                "rtx_emitter_states": 1,
+                "trajectory_states": 40,
+                "channels": 20_000,
+                "trajectory_elevation_deg": [-7.2123, 52.164],
+                "trajectory_duration_s": 4.0,
+                "trajectory_points": 800000,
+                "trajectory_source": "assets/common/mid360_official_pattern/mid360.csv",
+                "trajectory_sha256": "aa1fc08b6a4400608dbd6ee832b7ea3a9c3c37197e734f60f58fe5abf762269a",
+                "runtime_pattern_driver": "scripts/publish_mid360_ros2_isaacsim51.py",
+            }
+        )
+    else:
+        manifest["mid360"].update(
+            {
+                "profile": "rotary_scan",
+                "report_rate_per_emitter_hz": composed_summary["mid360_report_rate_hz"],
+            }
+        )
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return manifest
 
@@ -344,8 +357,16 @@ def _convert_and_compose(derived_urdf: Path, lidar_usd: Path, output_usd: Path) 
         raise RuntimeError(f"flattened asset has {len(revolute_joints)} revolute joints, expected 29")
     if not sensor.IsValid() or sensor.GetTypeName() != "OmniLidar":
         raise RuntimeError(f"flattened asset has no OmniLidar at {sensor_path}")
-    if sensor.GetAttribute("omni:sensor:Core:numberOfEmitters").Get() != 20_000:
-        raise RuntimeError("MID360 emitter contract changed during composition")
+    emitters = int(sensor.GetAttribute("omni:sensor:Core:numberOfEmitters").Get())
+    scan_type = str(sensor.GetAttribute("omni:sensor:Core:scanType").Get())
+    report_rate = int(sensor.GetAttribute("omni:sensor:Core:reportRateBaseHz").Get())
+    if (scan_type, emitters, report_rate) not in {
+        ("SOLID_STATE", 20_000, 10),
+        ("ROTARY", 40, 5_000),
+    }:
+        raise RuntimeError(
+            f"MID360 profile changed during composition: {scan_type}, {emitters}, {report_rate}"
+        )
     if sensor.GetAttribute("omni:sensor:Core:scanRateBaseHz").Get() != 10:
         raise RuntimeError("MID360 scan-rate contract changed during composition")
 
@@ -355,8 +376,15 @@ def _convert_and_compose(derived_urdf: Path, lidar_usd: Path, output_usd: Path) 
         "articulation_root": str(default_prim.GetPath().AppendPath("torso_link")),
         "revolute_joint_count": len(revolute_joints),
         "mid360_prim": str(sensor_path),
-        "mid360_emitters": 20_000,
+        "mid360_emitters": emitters,
         "mid360_scan_rate_hz": 10,
+        "mid360_scan_type": scan_type,
+        "mid360_report_rate_hz": report_rate,
+        "mid360_model": (
+            "MID-360 official non-repetitive pattern replay"
+            if scan_type == "SOLID_STATE"
+            else "MID-360 40-line rotary approximation"
+        ),
     }
 
 
@@ -367,6 +395,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--lidar-usd", type=Path, default=CURRENT_LIDAR_USD)
     parser.add_argument("--derived-urdf", type=Path, default=DERIVED_URDF)
     parser.add_argument("--output-usd", type=Path, default=OUTPUT_USD)
+    parser.add_argument("--manifest", type=Path)
     parser.add_argument("--derive-only", action="store_true")
     return parser.parse_args()
 
@@ -393,6 +422,7 @@ def main() -> None:
             args.lidar_usd.resolve(),
             args.output_usd.resolve(),
         )
+        manifest_path = args.manifest.resolve() if args.manifest else args.output_usd.resolve().parent / "manifest.json"
         manifest = write_manifest(
             derived,
             composed,
@@ -400,13 +430,14 @@ def main() -> None:
             args.output_usd.resolve(),
             args.official_urdf.resolve(),
             args.lidar_usd.resolve(),
+            manifest_path,
         )
         print(
             json.dumps(
                 {
                     "derived": derived,
                     "composed": composed,
-                    "manifest": str(MANIFEST_PATH),
+                    "manifest": str(manifest_path),
                     "asset_sha256": manifest["files"][args.output_usd.name]["sha256"],
                 },
                 indent=2,
