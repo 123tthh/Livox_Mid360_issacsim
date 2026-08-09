@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the policy-compatible Unitree G1 mode-13 (5010) + MID360 USD.
+"""Build an explicitly labelled Unitree G1 mode-13/mode-15 (5010) + MID360 USD.
 
 Unitree's mode-13 URDF differs from the previous ``g1_29dof_rev_1_0``
 mainly at the two wrist pitch/yaw actuators and the six 5010 wrist meshes.
@@ -37,7 +37,7 @@ CURRENT_LIDAR_USD = (
     REPOSITORY_ROOT / "assets/petal_scan/g1_4010/Unitree_G1_4010_MID360_Petal_Scan.usd"
 )
 DERIVED_URDF = SUPPORT_DIR / "Unitree_G1_5010_Training_Collision.urdf"
-OUTPUT_USD = REPOSITORY_ROOT / "assets/petal_scan/g1_5010/Unitree_G1_5010_MID360_Petal_Scan.usd"
+OUTPUT_USD = REPOSITORY_ROOT / "assets/petal_scan/g1_5010_mode_13/Unitree_G1_5010_Mode13_MID360_Petal_Scan.usd"
 MANIFEST_PATH = OUTPUT_USD.parent / "manifest.json"
 UNITREE_REPOSITORY = "https://github.com/unitreerobotics/unitree_ros"
 UNITREE_COMMIT = "f3772ce54c56ef2d34c6aee8100bc768896c7d19"
@@ -87,9 +87,11 @@ def derive_mode13_training_urdf(
     training_root = ET.parse(training_urdf).getroot()
     official_root = ET.parse(official_mode13_urdf).getroot()
 
-    if official_root.get("name") != "g1_29dof_mode_13":
-        raise ValueError(f"not Unitree mode 13: {official_mode13_urdf}")
-    training_root.set("name", "g1_29dof_mode_13_5010_mid360")
+    official_variant = official_root.get("name")
+    if official_variant not in {"g1_29dof_mode_13", "g1_29dof_mode_15"}:
+        raise ValueError(f"not Unitree 5010 mode 13/15: {official_mode13_urdf}")
+    mode_machine = int(official_variant.rsplit("_", 1)[1])
+    training_root.set("name", f"{official_variant}_5010_mid360")
 
     training_links = _named_elements(training_root, "link")
     official_links = _named_elements(official_root, "link")
@@ -139,7 +141,8 @@ def derive_mode13_training_urdf(
     ET.indent(training_root, space="  ")
     ET.ElementTree(training_root).write(output_urdf, encoding="utf-8", xml_declaration=True)
     return {
-        "official_variant": "g1_29dof_mode_13",
+        "official_variant": official_variant,
+        "mode_machine": mode_machine,
         "wrist_motor": "5010",
         "revolute_joint_count": len(revolute_joints),
         "wrist_links_replaced": len(WRIST_LINK_NAMES),
@@ -211,9 +214,11 @@ def write_manifest(
         "articulation_root": composed_summary["articulation_root"],
         "revolute_joint_count": composed_summary["revolute_joint_count"],
         "robot": {
-            "mode_machine": 13,
+            "mode_machine": derived_summary["mode_machine"],
             "wrist_motor": "5010",
-            "hip_pitch_roll_gear_ratio": [14.3, 22.5],
+            "hip_pitch_roll_gear_ratio": (
+                [14.3, 22.5] if derived_summary["mode_machine"] == 13 else [22.5, 22.5]
+            ),
             "waist_locked": False,
             "wrist_pitch_mass_kg": 0.684,
             "wrist_pitch_yaw_effort_limit_nm": 13.4,
@@ -233,6 +238,15 @@ def write_manifest(
             "mount_translation_m": [0.0002835, 0.00003, 0.41618],
             "mount_roll_deg": 180.0,
             "range_m": [0.1, 70.0],
+        },
+        "imu": {
+            "prim": composed_summary["articulation_root"] + "/mid360_imu",
+            "type": "IsaacImuSensor",
+            "rate_hz": 200,
+            "sensor_period_s": 0.005,
+            "colocated_and_aligned_with_lidar": True,
+            "ros2_topic": "/mid360/imu",
+            "ros2_frame": "mid360_link",
         },
         "files": {
             output_usd.name: {"bytes": output_usd.stat().st_size, "sha256": _sha256(output_usd)},
@@ -272,11 +286,13 @@ def _convert_and_compose(derived_urdf: Path, lidar_usd: Path, output_usd: Path) 
     from isaaclab.sim.converters import UrdfConverter, UrdfConverterCfg
     from pxr import Sdf, Usd, UsdPhysics
 
-    with tempfile.TemporaryDirectory(prefix="lidar_hiking_g1_5010_") as temp_dir:
+    robot_name = ET.parse(derived_urdf).getroot().get("name")
+    official_variant = robot_name.removesuffix("_5010_mid360")
+    with tempfile.TemporaryDirectory(prefix="livox_mid360_g1_5010_") as temp_dir:
         converter_cfg = UrdfConverterCfg(
             asset_path=str(derived_urdf),
             usd_dir=temp_dir,
-            usd_file_name="g1_29dof_mode_13_5010.usd",
+            usd_file_name=f"{robot_name}.usd",
             make_instanceable=False,
             replace_cylinders_with_capsules=True,
             merge_fixed_joints=True,
@@ -314,7 +330,7 @@ def _convert_and_compose(derived_urdf: Path, lidar_usd: Path, output_usd: Path) 
             "lidarHiking:unitreeVariant",
             Sdf.ValueTypeNames.String,
             custom=True,
-        ).Set("g1_29dof_mode_13")
+        ).Set(official_variant)
         target_root.CreateAttribute(
             "lidarHiking:wristMotor",
             Sdf.ValueTypeNames.String,
@@ -322,6 +338,8 @@ def _convert_and_compose(derived_urdf: Path, lidar_usd: Path, output_usd: Path) 
         ).Set("5010")
         source_sensor_path = source_root.GetPath().AppendPath("torso_link/mid360_link")
         target_sensor_path = target_root.GetPath().AppendPath("torso_link/mid360_link")
+        source_imu_path = source_root.GetPath().AppendPath("torso_link/mid360_imu")
+        target_imu_path = target_root.GetPath().AppendPath("torso_link/mid360_imu")
         print(
             f"[5010 builder] copy {source_sensor_path} -> {target_sensor_path}",
             flush=True,
@@ -340,7 +358,18 @@ def _convert_and_compose(derived_urdf: Path, lidar_usd: Path, output_usd: Path) 
         )
         print(f"[5010 builder] Sdf.CopySpec={copy_result!r}", flush=True)
         if copy_result is False:
-            raise RuntimeError("failed to copy MID360 prim into the mode-13 stage")
+            raise RuntimeError("failed to copy MID360 prim into the target G1 5010 stage")
+        if not source_stage.GetPrimAtPath(source_imu_path).IsValid():
+            raise RuntimeError(f"source MID360 IMU prim is missing: {source_imu_path}")
+        imu_copy_result = Sdf.CopySpec(
+            source_stage.GetRootLayer(),
+            source_imu_path,
+            target_stage.GetRootLayer(),
+            target_imu_path,
+        )
+        print(f"[5010 builder] IMU Sdf.CopySpec={imu_copy_result!r}", flush=True)
+        if imu_copy_result is False:
+            raise RuntimeError("failed to copy MID360 IMU into the target stage")
         target_stage.GetRootLayer().Save()
 
         output_usd.parent.mkdir(parents=True, exist_ok=True)

@@ -11,8 +11,8 @@
   "default_prim": "/MID360",
   "files": {
     "Livox_MID360_Rotary_Scan.usd": {
-      "bytes": 4217,
-      "sha256": "9c08126d7b8ab71183ce9967d268a7f8ed41fc75ab7950a13f4deb7d2d0f0ac3"
+      "bytes": 4222,
+      "sha256": "68de69d4a4448ea84b4a16158abae81d8df951f14f08537744f6cedcaca52d7c"
     }
   },
   "form": "standalone",

@@ -26,7 +26,8 @@ ROOT = Path(__file__).resolve().parents[1]
 TRAJECTORY = ROOT / "assets/common/mid360_official_pattern/mid360.csv"
 ASSETS = (
     ROOT / "assets/petal_scan/g1_4010/Unitree_G1_4010_MID360_Petal_Scan.usd",
-    ROOT / "assets/petal_scan/g1_5010/Unitree_G1_5010_MID360_Petal_Scan.usd",
+    ROOT / "assets/petal_scan/g1_5010_mode_13/Unitree_G1_5010_Mode13_MID360_Petal_Scan.usd",
+    ROOT / "assets/petal_scan/g1_5010_mode_15/Unitree_G1_5010_Mode15_MID360_Petal_Scan.usd",
 )
 POINT_RATE_HZ = 200_000
 SCAN_RATE_HZ = 10

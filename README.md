@@ -3,14 +3,19 @@
 项目规范名：**Livox_MID360_IsaacSim**。
 
 本仓库提供两套明确分离的 MID-360 仿真扫描配置，每套都包含独立雷达、
-Unitree G1 4010 含雷达机器人和 Unitree G1 5010 含雷达机器人，共六份可发布资产。
+Unitree G1 4010 含雷达机器人，以及明确区分的 Unitree G1 5010 Mode13/Mode15
+含雷达机器人，共八份可发布资产。
 
 ## 资产矩阵
 
-| 扫描配置 | 独立 MID-360 | G1 4010 + MID-360 | G1 5010 + MID-360 |
-| --- | --- | --- | --- |
-| Petal Scan（花瓣扫描） | `assets/petal_scan/standalone/Livox_MID360_Petal_Scan.usd` | `assets/petal_scan/g1_4010/Unitree_G1_4010_MID360_Petal_Scan.usd` | `assets/petal_scan/g1_5010/Unitree_G1_5010_MID360_Petal_Scan.usd` |
-| Rotary Scan（普通旋转近似） | `assets/rotary_scan/standalone/Livox_MID360_Rotary_Scan.usd` | `assets/rotary_scan/g1_4010/Unitree_G1_4010_MID360_Rotary_Scan.usd` | `assets/rotary_scan/g1_5010/Unitree_G1_5010_MID360_Rotary_Scan.usd` |
+| 扫描配置 | 独立 MID-360 | G1 4010 | G1 5010 Mode13 | G1 5010 Mode15 |
+| --- | --- | --- | --- | --- |
+| Petal Scan（花瓣扫描） | `assets/petal_scan/standalone/Livox_MID360_Petal_Scan.usd` | `assets/petal_scan/g1_4010/Unitree_G1_4010_MID360_Petal_Scan.usd` | `assets/petal_scan/g1_5010_mode_13/Unitree_G1_5010_Mode13_MID360_Petal_Scan.usd` | `assets/petal_scan/g1_5010_mode_15/Unitree_G1_5010_Mode15_MID360_Petal_Scan.usd` |
+| Rotary Scan（普通旋转近似） | `assets/rotary_scan/standalone/Livox_MID360_Rotary_Scan.usd` | `assets/rotary_scan/g1_4010/Unitree_G1_4010_MID360_Rotary_Scan.usd` | `assets/rotary_scan/g1_5010_mode_13/Unitree_G1_5010_Mode13_MID360_Rotary_Scan.usd` | `assets/rotary_scan/g1_5010_mode_15/Unitree_G1_5010_Mode15_MID360_Rotary_Scan.usd` |
+
+Mode13 与 Mode15 不是别名：两者分别来自官方 `g1_29dof_mode_13.urdf` 和
+`g1_29dof_mode_15.urdf`。Mode13 髋部减速比为 14.3/22.5，Mode15 为
+22.5/22.5；两者均为 5010 手腕且腰部未锁定。
 
 共用资源位于 `assets/common/`：
 
@@ -64,7 +69,7 @@ Rotary Scan 不包含花瓣轨迹 Scope，也不启动运行时状态切换器�
 - ROS 点云 frame：`mid360_link`；
 - ROS IMU 话题：`/mid360/imu`，frame：`mid360_link`；
 - TF：机器人根节点到 `mid360_link`；
-- FAST-LIO 仿真外参：`extrinsic_T=[0,0,0]`、`extrinsic_R=I`。
+- LiDAR/IMU 相对外参：`T=[0,0,0]`、`R=I`。
 
 两份 G1 USD 都是展平的单文件机器人资产，不固化运动策略、建图或控制 Action Graph。
 
@@ -78,12 +83,48 @@ Rotary Scan 不包含花瓣轨迹 Scope，也不启动运行时状态切换器�
 5. 清理运行时图：调用 `cleanup_mid360_ros2()`。
 
 读取 IMU 时，将各资产 README 中列出的 `mid360_imu` Prim 接入
-`IsaacReadIMU` 和 `ROS2PublishImu`。六个资产各自目录中的 `README.md`
-分别给出了 Prim 路径、ROS 2 话题和 FAST-LIO 外参设置。
+`IsaacReadIMU` 和 `ROS2PublishImu`。八个资产各自目录中的 `README.md`
+分别给出了 Prim 路径、ROS 2 话题和传感器外参设置。
 
 独立资产会相对引用 `assets/common/Livox_MID360_CAD.usd`，克隆或复制时应保留仓库目录结构。
 
 ## 可移植测试场景
+
+### 自建物体场 + 固定 G1 5010 Mode13
+
+该验证只使用本仓库自建场景，机器人双脚落地且通过 World FixedJoint 固定，29 个旋转关节
+上下限均锁为 0；5 m 内放置九类贴地物体。不加载策略、运控或建图组件：
+
+```bash
+./scripts/run_object_field_validation.sh petal
+./scripts/run_rviz2_mid360.sh
+
+# 或普通旋转近似
+./scripts/run_object_field_validation.sh rotary
+./scripts/run_rviz2_mid360.sh
+```
+
+RViz2 使用直立机器人坐标系 `G1`，并仅为显示密度累积 0.5 s 切片；话题仍为
+`/mid360/points`，发布端不降采样。详见 `tests/scenes/object_field/README.md`。
+
+### 实机联调截图（Isaac Sim 5.1，2026-08-09）
+
+G1 5010 Mode13 固定关节、Petal Scan、自建九类物体场：
+
+![Isaac Sim 5.1 自建物体场与固定 G1 5010 Mode13](docs/validation/screenshots/MID360_G1_5010_Mode13_Petal_Object_Field_IsaacSim51.png)
+
+同一次运行由 Isaac Sim ROS 2 Bridge 发布 `/mid360/points`，RViz2 以直立 `G1`
+坐标系显示，并累积 0.5 s RTX 切片：
+
+![RViz2 中的 MID360 非重复花瓣点云](docs/validation/screenshots/MID360_G1_5010_Mode13_Petal_PointCloud_RViz2.png)
+
+另一观察角度的同配置运行总览（用于展示全部物体与较长显示积累效果）：
+
+![Isaac Sim 5.1 物体场总览](docs/validation/screenshots/MID360_G1_5010_Mode13_Object_Field_Overview_IsaacSim51.png)
+
+![RViz2 点云总览](docs/validation/screenshots/MID360_G1_5010_Mode13_PointCloud_Overview_RViz2.png)
+
+以上四张均为 Petal 配置；当前 README 没有将其标记为 Rotary 对比图。
 
 `tests/scenes/` 提供可直接打开的 6、10、15 cm 阶梯 Stage。每个 Stage 默认引用 Petal Scan
 独立雷达，带灯光和 PhysicsScene；底层阶梯 USD 完全自包含，不依赖 Lidar_Hiking：
@@ -119,7 +160,7 @@ tests/scenes/MID360_Test_H15cm.usda
   --sensor-source assets/rotary_scan/g1_4010/Unitree_G1_4010_MID360_Rotary_Scan.usd
 ```
 
-重建后补入/刷新六个资产的 IMU：
+重建后补入/刷新八个资产的 IMU：
 
 ```bash
 /path/to/isaac-sim/python.sh scripts/add_mid360_imu_isaacsim51.py

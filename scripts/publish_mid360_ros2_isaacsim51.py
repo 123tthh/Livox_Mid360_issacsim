@@ -11,16 +11,16 @@ Before it creates the graph, this script also verifies the independent
 ``ROS_RobotState`` and ``ROS_Mid360Imu`` graphs use their own simulation-time
 nodes. The override is session-only, but it prevents a running scene from
 mixing Unix time with ``/clock``. Unlike the upstream sensor-only helper, this
-scene variant never disables gravity and leaves the timeline paused until the
-policy and FAST-LIO2 are ready.
+scene variant never disables gravity.  It does not load a policy, controller,
+localization or mapping stack.
 This publisher must be the sole owner of its RTX render product; sharing RTX
 LiDAR resources can raise ``cudaErrorInvalidValue`` in Isaac Sim 5.1.
 
 Isaac Sim 5.1.0-rc.19 is unstable with the ROS 2 helper's accumulated
 ``fullScan=True`` path for this custom OmniLidar and can segfault shortly after
 playback starts. This script publishes non-accumulated per-render-frame slices.
-Downstream consumers such as Lidar_Hiking's input bridge can combine 0.1 s of
-slices into one 10 Hz scan; no frame skipping or point subsampling is used.
+RViz can accumulate the slices for a short display interval; no frame skipping
+or point subsampling is used by this publisher.
 
 Run ``cleanup_mid360_ros2()`` in Script Editor to stop publishing and remove the
 temporary graph/render product.
@@ -75,7 +75,7 @@ SIMULATION_TIME_CONTRACTS = (
 # Keep the official helper default.  fullScan=True selects the accumulated scan
 # buffer path that crashes Isaac Sim 5.1.0-rc.19 with this custom OmniLidar.
 # With False, one current RTX slice is published per render update; the input
-# bridge combines every slice into a stable 10 Hz FAST-LIO scan.
+# a visualization or consumer may combine slices into a stable 10 Hz scan.
 PUBLISH_FULL_SCAN = False
 PUBLISH_FRAME_SKIP_COUNT = 0
 USE_SYSTEM_TIME = False
@@ -225,11 +225,11 @@ def _validate_lidar(stage: Usd.Stage) -> str:
     )
     if max_pose_error > 1.0e-6:
         raise RuntimeError(
-            "Mid-360 LiDAR/IMU poses differ; FAST-LIO identity extrinsics would tilt the map "
+            "Mid-360 LiDAR/IMU poses differ; identity sensor extrinsics would tilt the data "
             f"(max matrix error={max_pose_error:.3e})"
         )
     print(
-        "[Mid360ROS2] LiDAR and SLAM IMU are colocated/aligned; FAST-LIO extrinsic_T=0 and extrinsic_R=I are required"
+        "[Mid360ROS2] LiDAR and IMU are colocated/aligned (identity extrinsics)"
     )
     print(f"[Mid360ROS2] Validated asset profile: {profile}")
     return profile
@@ -656,7 +656,7 @@ def main() -> None:
     print(f"[Mid360ROS2] Publishing sensor_msgs/PointCloud2: /{TOPIC_NAME}")
     print(
         f"[Mid360ROS2] Publishing TF: {ROBOT_FIXED_FRAME_ID} -> {FRAME_ID}; "
-        "RViz therefore displays the inverted scan in the upright robot frame"
+        f"use Fixed Frame={ROBOT_FIXED_FRAME_ID} in RViz for an upright view"
     )
     print(
         f"[Mid360ROS2] frame_id={FRAME_ID}, fullScan={PUBLISH_FULL_SCAN}, "

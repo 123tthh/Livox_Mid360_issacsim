@@ -28,17 +28,17 @@ from apply_mid360_petal_profile import (  # noqa: E402
 
 class AssetTests(unittest.TestCase):
     def test_catalog_hashes(self) -> None:
-        self.assertEqual(len(validate()), 6)
+        self.assertEqual(len(validate()), 8)
 
         catalog = json.loads((ROOT / "assets/catalog.json").read_text())
         self.assertEqual(catalog["schema_version"], 2)
         self.assertEqual(catalog["project"], "Livox_MID360_IsaacSim")
         profiles = [entry["profile"] for entry in catalog["assets"].values()]
         forms = [entry["form"] for entry in catalog["assets"].values()]
-        self.assertEqual(profiles.count("petal_scan"), 3)
-        self.assertEqual(profiles.count("rotary_scan"), 3)
+        self.assertEqual(profiles.count("petal_scan"), 4)
+        self.assertEqual(profiles.count("rotary_scan"), 4)
         self.assertEqual(forms.count("standalone"), 2)
-        self.assertEqual(forms.count("robot"), 4)
+        self.assertEqual(forms.count("robot"), 6)
         for entry in catalog["assets"].values():
             path = Path(entry["path"])
             self.assertIn(entry["profile"], path.parts)
@@ -82,7 +82,14 @@ class AssetTests(unittest.TestCase):
             for entry, manifest in manifests
             if entry["form"] == "robot"
         )
-        self.assertEqual(robot_motors, ["4010", "4010", "5010", "5010"])
+        self.assertEqual(robot_motors, ["4010", "4010", "5010", "5010", "5010", "5010"])
+
+        mode_assets = {
+            entry["mode_machine"]
+            for entry in catalog["assets"].values()
+            if entry.get("wrist_motor") == "5010"
+        }
+        self.assertEqual(mode_assets, {13, 15})
 
     def test_official_nonrepetitive_trajectory(self) -> None:
         trajectory = load_trajectory(TRAJECTORY)

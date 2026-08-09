@@ -1,0 +1,270 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World" (
+    kind = "assembly"
+)
+{
+    custom int mid360Validation:lockedJointCount = 29
+    custom string mid360Validation:profile = "rotary"
+    custom string mid360Validation:robot = "G1 5010 Mode13"
+    custom bool mid360Validation:usesExternalControl = 0
+
+    def Xform "ObjectField" (
+        prepend references = @MID360_Object_Field.usda@
+    )
+    {
+    }
+
+    def Xform "G1" (
+        prepend references = @../../../assets/rotary_scan/g1_5010_mode_13/Unitree_G1_5010_Mode13_MID360_Rotary_Scan.usd@
+    )
+    {
+        double3 xformOp:translate = (0, 0, 0.836273)
+
+        over "joints"
+        {
+            over "left_shoulder_pitch_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_shoulder_roll_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_shoulder_yaw_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_elbow_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_wrist_roll_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_wrist_pitch_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_wrist_yaw_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_shoulder_pitch_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_shoulder_roll_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_shoulder_yaw_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_elbow_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_wrist_roll_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_wrist_pitch_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_wrist_yaw_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "waist_pitch_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "waist_roll_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "waist_yaw_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_hip_pitch_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_hip_roll_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_hip_yaw_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_knee_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_ankle_pitch_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "left_ankle_roll_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_hip_pitch_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_hip_roll_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_hip_yaw_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_knee_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_ankle_pitch_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+
+            over "right_ankle_roll_joint"
+            {
+                float drive:angular:physics:targetPosition = 0
+                float physics:lowerLimit = 0
+                float physics:upperLimit = 0
+            }
+        }
+    }
+
+    def PhysicsFixedJoint "G1WorldAnchor"
+    {
+        rel physics:body1 = </World/G1/torso_link>
+        point3f physics:localPos0 = (0, 0, 0.836273)
+        point3f physics:localPos1 = (0, 0, 0)
+        quatf physics:localRot0 = (1, 0, 0, 0)
+        quatf physics:localRot1 = (1, 0, 0, 0)
+    }
+
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def DomeLight "DomeLight"
+    {
+        float inputs:intensity = 650
+    }
+
+    def DistantLight "Sun"
+    {
+        float inputs:angle = 0.53
+        float inputs:intensity = 3000
+        float3 xformOp:rotateXYZ = (315, 0, 35)
+        uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+    }
+
+    def Camera "ValidationCamera"
+    {
+        float focalLength = 24
+        matrix4d xformOp:transform = ( (0.7071067811865476, -0.7071067811865476, 0, 0), (0.2430531217003098, 0.2430531217003098, 0.9390688792966515, 0), (-0.6640219725519136, -0.6640219725519136, 0.3437290210856965, 0), (-8.5, -8.5, 5.2, 0.9999999999999999) )
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+    }
+}

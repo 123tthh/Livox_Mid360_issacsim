@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSET_ROOT = ROOT / "assets"
 RELATIVE_TARGET = Path("simulation/source/lidar_hiking_sim/lidar_hiking_sim/assets")
 PROFILES = ("petal_scan", "rotary_scan")
-ASSET_FORMS = ("standalone", "g1_4010", "g1_5010")
+ASSET_FORMS = ("standalone", "g1_4010", "g1_5010_mode_13", "g1_5010_mode_15")
 PUBLISHER_SOURCE = ROOT / "scripts/publish_mid360_ros2_isaacsim51.py"
 PUBLISHER_TARGET = Path("simulation/scripts/publish_lidar_hiking_mid360_ros2_isaacsim51.py")
 

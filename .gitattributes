@@ -1,3 +1,4 @@
 *.usd binary
 *.STL binary
 assets/common/g1_5010_support/unitree_ros/robots/g1_description/g1_29dof_mode_13.urdf binary
+assets/common/g1_5010_support/unitree_ros/robots/g1_description/g1_29dof_mode_15.urdf binary

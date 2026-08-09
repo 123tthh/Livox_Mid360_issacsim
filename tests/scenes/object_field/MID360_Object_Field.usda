@@ -1,0 +1,166 @@
+#usda 1.0
+(
+    defaultPrim = "ObjectField"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "ObjectField" (
+    kind = "component"
+)
+{
+    custom bool mid360Validation:allObjectsTouchGround = 1
+    custom int mid360Validation:objectCount = 9
+    custom double mid360Validation:radiusM = 5
+
+    def Cube "Ground" (
+        prepend apiSchemas = ["PhysicsCollisionAPI"]
+    )
+    {
+        color3f[] primvars:displayColor = [(0.18, 0.2, 0.22)]
+        double size = 1
+        float3 xformOp:scale = (12, 12, 0.1)
+        double3 xformOp:translate = (0, 0, -0.05)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def "Objects"
+    {
+        def Cube "Box" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.86, 0.18, 0.15)]
+            double size = 1
+            float3 xformOp:scale = (1.1, 0.8, 1)
+            double3 xformOp:translate = (2.2, 0.4, 0.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Sphere "Sphere" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.16, 0.48, 0.92)]
+            double radius = 0.55
+            double3 xformOp:translate = (-2, 1.6, 0.55)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Cylinder "Cylinder" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            uniform token axis = "Z"
+            double height = 1.5
+            color3f[] primvars:displayColor = [(0.15, 0.78, 0.33)]
+            double radius = 0.45
+            double3 xformOp:translate = (0.2, 3, 0.75)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Cone "Cone" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            uniform token axis = "Z"
+            double height = 1.4
+            color3f[] primvars:displayColor = [(0.96, 0.55, 0.1)]
+            double radius = 0.7
+            double3 xformOp:translate = (-3, -1.2, 0.7)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Capsule "Capsule" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            uniform token axis = "Z"
+            double height = 0.9
+            color3f[] primvars:displayColor = [(0.62, 0.27, 0.88)]
+            double radius = 0.35
+            double3 xformOp:translate = (1.4, -3, 0.8)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Cube "ThinWall" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.1, 0.74, 0.78)]
+            double size = 1
+            float3 xformOp:scale = (1.5, 0.22, 2)
+            double3 xformOp:translate = (3.5, 2.2, 1)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Mesh "Pyramid" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            float3[] extent = [(-0.65, -0.65, 0), (0.65, 0.65, 1.8)]
+            int[] faceVertexCounts = [4, 3, 3, 3, 3]
+            int[] faceVertexIndices = [0, 3, 2, 1, 0, 1, 4, 1, 2, 4, 2, 3, 4, 3, 0, 4]
+            uniform token physics:approximation = "none"
+            point3f[] points = [(-0.65, -0.65, 0), (0.65, -0.65, 0), (0.65, 0.65, 0), (-0.65, 0.65, 0), (0, 0, 1.8)]
+            color3f[] primvars:displayColor = [(0.93, 0.25, 0.62)]
+            uniform token subdivisionScheme = "none"
+            double3 xformOp:translate = (-3.4, 2.5, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Mesh "Wedge" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            float3[] extent = [(-0.8, -0.6, 0), (0.8, 0.6, 0.9)]
+            int[] faceVertexCounts = [4, 4, 3, 3, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 1, 2, 5, 4, 0, 1, 4, 3, 5, 2, 0, 4, 5, 3]
+            uniform token physics:approximation = "none"
+            point3f[] points = [(-0.8, -0.6, 0), (0.8, -0.6, 0), (0.8, 0.6, 0), (-0.8, 0.6, 0), (0.8, -0.6, 0.9), (0.8, 0.6, 0.9)]
+            color3f[] primvars:displayColor = [(0.85, 0.82, 0.13)]
+            uniform token subdivisionScheme = "none"
+            double3 xformOp:translate = (-1, -4, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "Arch"
+        {
+            double3 xformOp:translate = (3.6, -2.5, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+
+            def Cube "LeftPost" (
+                prepend apiSchemas = ["PhysicsCollisionAPI"]
+            )
+            {
+                color3f[] primvars:displayColor = [(0.48, 0.3, 0.16)]
+                double size = 1
+                float3 xformOp:scale = (0.28, 0.45, 1.6)
+                double3 xformOp:translate = (-0.55, 0, 0.8)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "RightPost" (
+                prepend apiSchemas = ["PhysicsCollisionAPI"]
+            )
+            {
+                color3f[] primvars:displayColor = [(0.48, 0.3, 0.16)]
+                double size = 1
+                float3 xformOp:scale = (0.28, 0.45, 1.6)
+                double3 xformOp:translate = (0.55, 0, 0.8)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Cube "Lintel" (
+                prepend apiSchemas = ["PhysicsCollisionAPI"]
+            )
+            {
+                color3f[] primvars:displayColor = [(0.48, 0.3, 0.16)]
+                double size = 1
+                float3 xformOp:scale = (1.38, 0.45, 0.3)
+                double3 xformOp:translate = (0, 0, 1.75)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+    }
+}

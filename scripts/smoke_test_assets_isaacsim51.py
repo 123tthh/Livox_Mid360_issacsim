@@ -20,6 +20,10 @@ from pxr import Gf, Usd, UsdGeom, UsdPhysics  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = json.loads((ROOT / "assets/catalog.json").read_text(encoding="utf-8"))
 SCENE_CATALOG = json.loads((ROOT / "tests/scenes/catalog.json").read_text(encoding="utf-8"))
+OBJECT_FIELD_SCENES = {
+    "petal": "tests/scenes/object_field/MID360_G1_5010_Petal_Object_Field.usda",
+    "rotary": "tests/scenes/object_field/MID360_G1_5010_Rotary_Object_Field.usda",
+}
 LIDAR_SUFFIX = "/torso_link/mid360_link/mid360_native_approx"
 
 
@@ -91,6 +95,15 @@ def validate_asset(asset_id: str, entry: dict[str, object]) -> None:
         sensor_up = mount_matrix.TransformDir(Gf.Vec3d(0.0, 0.0, 1.0)).GetNormalized()
         if sensor_up[2] > -0.999:
             raise RuntimeError(f"robot MID-360 is not mounted with 180-degree roll: {asset_id}")
+        if "mode_machine" in entry:
+            expected_variant = f"g1_29dof_mode_{entry['mode_machine']}"
+            actual_variant = stage.GetDefaultPrim().GetAttribute(
+                "lidarHiking:unitreeVariant"
+            ).Get()
+            if actual_variant != expected_variant:
+                raise RuntimeError(
+                    f"{asset_id} is labelled {actual_variant!r}, expected {expected_variant!r}"
+                )
     else:
         if joint_count != 0:
             raise RuntimeError(f"standalone asset contains robot joints: {asset_id}")
@@ -175,6 +188,63 @@ def render_scene_smoke(scene_id: str, entry: dict[str, object]) -> None:
     print(f"SCENE_RENDER_OK={scene_id}", flush=True)
 
 
+def validate_object_field_scene(profile: str, relative_path: str) -> None:
+    path = ROOT / relative_path
+    stage = Usd.Stage.Open(str(path))
+    if stage is None or str(stage.GetDefaultPrim().GetPath()) != "/World":
+        raise RuntimeError(f"could not open object-field scene {path}")
+    world = stage.GetDefaultPrim()
+    if world.GetAttribute("mid360Validation:profile").Get() != profile:
+        raise RuntimeError(f"wrong object-field profile in {path}")
+    if world.GetAttribute("mid360Validation:lockedJointCount").Get() != 29:
+        raise RuntimeError(f"wrong locked-joint count in {path}")
+
+    lidar = _one_lidar(stage)
+    expected_scan_type = "SOLID_STATE" if profile == "petal" else "ROTARY"
+    actual_scan_type = str(lidar.GetAttribute("omni:sensor:Core:scanType").Get())
+    if actual_scan_type != expected_scan_type:
+        raise RuntimeError(f"wrong LiDAR profile in {path}: {actual_scan_type}")
+
+    joints = [prim for prim in stage.Traverse() if prim.IsA(UsdPhysics.RevoluteJoint)]
+    if len(joints) != 29:
+        raise RuntimeError(f"object-field scene has {len(joints)} revolute joints")
+    for joint in joints:
+        lower = float(joint.GetAttribute("physics:lowerLimit").Get())
+        upper = float(joint.GetAttribute("physics:upperLimit").Get())
+        if lower != 0.0 or upper != 0.0:
+            raise RuntimeError(f"joint is not locked in {profile}: {joint.GetPath()}")
+
+    anchor = stage.GetPrimAtPath("/World/G1WorldAnchor")
+    if not anchor.IsA(UsdPhysics.FixedJoint):
+        raise RuntimeError(f"missing G1 world anchor in {profile}")
+    objects = stage.GetPrimAtPath("/World/ObjectField/Objects").GetChildren()
+    if len(objects) != 9:
+        raise RuntimeError(f"expected 9 object groups in {profile}, found {len(objects)}")
+    bbox_cache = UsdGeom.BBoxCache(
+        Usd.TimeCode.Default(), [UsdGeom.Tokens.default_, UsdGeom.Tokens.render]
+    )
+    for object_prim in objects:
+        box = bbox_cache.ComputeWorldBound(object_prim).ComputeAlignedBox()
+        minimum = box.GetMin()
+        maximum = box.GetMax()
+        center_x = 0.5 * (minimum[0] + maximum[0])
+        center_y = 0.5 * (minimum[1] + maximum[1])
+        if abs(float(minimum[2])) > 1.0e-5:
+            raise RuntimeError(f"object does not touch ground: {object_prim.GetPath()} z={minimum[2]}")
+        if center_x * center_x + center_y * center_y > 25.0:
+            raise RuntimeError(f"object center is outside 5 m: {object_prim.GetPath()}")
+
+    robot_box = bbox_cache.ComputeWorldBound(stage.GetPrimAtPath("/World/G1")).ComputeAlignedBox()
+    robot_min_z = float(robot_box.GetMin()[2])
+    if abs(robot_min_z) > 5.0e-4:
+        raise RuntimeError(f"G1 feet are not on the ground in {profile}: z={robot_min_z}")
+    print(
+        f"OBJECT_SCENE_OK={profile} OBJECTS={len(objects)} JOINTS={len(joints)} "
+        f"ROBOT_MIN_Z={robot_min_z:.6f} SCAN_TYPE={actual_scan_type}",
+        flush=True,
+    )
+
+
 def main() -> None:
     try:
         for asset_id, entry in CATALOG["assets"].items():
@@ -184,6 +254,11 @@ def main() -> None:
         for scene_id, entry in SCENE_CATALOG["scenes"].items():
             validate_scene(scene_id, entry)
         render_scene_smoke("h10cm", SCENE_CATALOG["scenes"]["h10cm"])
+        for profile, relative_path in OBJECT_FIELD_SCENES.items():
+            validate_object_field_scene(profile, relative_path)
+            render_scene_smoke(
+                f"object_{profile}", {"stage": {"path": relative_path}}
+            )
         print(f"ISAACSIM_ASSET_COUNT={len(CATALOG['assets'])}", flush=True)
         print(f"ISAACSIM_SCENE_COUNT={len(SCENE_CATALOG['scenes'])}", flush=True)
     except BaseException:

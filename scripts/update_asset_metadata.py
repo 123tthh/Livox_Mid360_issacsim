@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synchronize the six published MID-360 manifests and asset catalog."""
+"""Synchronize the eight published MID-360 manifests and asset catalog."""
 
 from __future__ import annotations
 
@@ -29,11 +29,20 @@ ASSETS = (
         "wrist_motor": "4010",
     },
     {
-        "id": "g1-5010-mid360-petal",
-        "path": "assets/petal_scan/g1_5010/Unitree_G1_5010_MID360_Petal_Scan.usd",
+        "id": "g1-5010-mode13-mid360-petal",
+        "path": "assets/petal_scan/g1_5010_mode_13/Unitree_G1_5010_Mode13_MID360_Petal_Scan.usd",
         "profile": "petal_scan",
         "form": "robot",
         "wrist_motor": "5010",
+        "mode_machine": 13,
+    },
+    {
+        "id": "g1-5010-mode15-mid360-petal",
+        "path": "assets/petal_scan/g1_5010_mode_15/Unitree_G1_5010_Mode15_MID360_Petal_Scan.usd",
+        "profile": "petal_scan",
+        "form": "robot",
+        "wrist_motor": "5010",
+        "mode_machine": 15,
     },
     {
         "id": "mid360-rotary-standalone",
@@ -49,11 +58,20 @@ ASSETS = (
         "wrist_motor": "4010",
     },
     {
-        "id": "g1-5010-mid360-rotary",
-        "path": "assets/rotary_scan/g1_5010/Unitree_G1_5010_MID360_Rotary_Scan.usd",
+        "id": "g1-5010-mode13-mid360-rotary",
+        "path": "assets/rotary_scan/g1_5010_mode_13/Unitree_G1_5010_Mode13_MID360_Rotary_Scan.usd",
         "profile": "rotary_scan",
         "form": "robot",
         "wrist_motor": "5010",
+        "mode_machine": 13,
+    },
+    {
+        "id": "g1-5010-mode15-mid360-rotary",
+        "path": "assets/rotary_scan/g1_5010_mode_15/Unitree_G1_5010_Mode15_MID360_Rotary_Scan.usd",
+        "profile": "rotary_scan",
+        "form": "robot",
+        "wrist_motor": "5010",
+        "mode_machine": 15,
     },
 )
 
@@ -142,7 +160,12 @@ def _update_robot_manifest(spec: dict[str, str], path: Path) -> None:
             "assets/common/g1_5010_support/instinctlab/"
             "g1_29dof_torsoBase_popsicle_with_shoe.urdf"
         )
-        manifest["derived_urdf"] = "../../common/g1_5010_support/Unitree_G1_5010_Training_Collision.urdf"
+        mode = spec.get("mode_machine", 13)
+        manifest["derived_urdf"] = (
+            "../../common/g1_5010_support/Unitree_G1_5010_Mode15_Training_Collision.urdf"
+            if mode == 15
+            else "../../common/g1_5010_support/Unitree_G1_5010_Training_Collision.urdf"
+        )
     manifest["builder"] = "scripts/build_g1_5010_mid360_asset.py" if spec["wrist_motor"] == "5010" else None
     if manifest["builder"] is None:
         manifest.pop("builder", None)

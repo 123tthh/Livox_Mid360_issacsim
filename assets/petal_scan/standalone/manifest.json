@@ -11,8 +11,8 @@
   "default_prim": "/MID360",
   "files": {
     "Livox_MID360_Petal_Scan.usd": {
-      "bytes": 3090110,
-      "sha256": "3a1ea3afd1d2ba23bf3c489c83eae3a2eb3a505668a54bf3156884ca075fe705"
+      "bytes": 3090111,
+      "sha256": "9d683cfec698d6511080a399660682fda2ba5c79fb667cad9f8bbec81798aa6d"
     }
   },
   "form": "standalone",
