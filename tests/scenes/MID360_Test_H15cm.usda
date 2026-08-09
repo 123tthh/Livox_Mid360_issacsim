@@ -1,0 +1,48 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "World" (
+    kind = "assembly"
+)
+{
+    custom string mid360Test:description = "15 cm eight-step LiDAR fixture"
+    custom double mid360Test:stepHeight = 0.15
+
+    def Xform "Environment" (
+        prepend references = @./stairs/MID360_Test_Stairs_H15cm.usda@
+    )
+    {
+    }
+
+    def Xform "MID360" (
+        prepend references = @../../assets/petal_scan/standalone/Livox_MID360_Petal_Scan.usd@
+    )
+    {
+        quatf xformOp:orient = (0, 1, 0, 0)
+        double3 xformOp:translate = (0, 0, 1.2)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+    }
+
+    def PhysicsScene "PhysicsScene"
+    {
+        vector3f physics:gravityDirection = (0, 0, -1)
+        float physics:gravityMagnitude = 9.81
+    }
+
+    def DomeLight "DomeLight"
+    {
+        float inputs:intensity = 700
+    }
+
+    def DistantLight "Sun"
+    {
+        float inputs:angle = 0.53
+        float inputs:intensity = 2500
+        float3 xformOp:rotateXYZ = (315, 0, 35)
+        uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+    }
+}

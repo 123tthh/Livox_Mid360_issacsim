@@ -15,6 +15,11 @@ repository code. The root `LICENSE` does not replace the licenses below.
   `assets/common/mid360_official_pattern/`.
 - NVIDIA Isaac Sim schemas and runtime are external dependencies and are not
   redistributed here.
+- The directional 6/10/15 cm stair geometry under `tests/scenes/stairs/` was
+  migrated from the companion Lidar_Hiking workspace as self-contained ASCII
+  USD test fixtures. Source-content hashes are recorded in
+  `tests/scenes/catalog.json`; no Lidar_Hiking code, policy, or mapping stack is
+  redistributed with these fixtures.
 - Livox and Unitree names are used only to identify compatible hardware/model
   families; this repository does not claim endorsement by either vendor.
 

@@ -83,6 +83,20 @@ Rotary Scan 不包含花瓣轨迹 Scope，也不启动运行时状态切换器�
 
 独立资产会相对引用 `assets/common/Livox_MID360_CAD.usd`，克隆或复制时应保留仓库目录结构。
 
+## 可移植测试场景
+
+`tests/scenes/` 提供可直接打开的 6、10、15 cm 阶梯 Stage。每个 Stage 默认引用 Petal Scan
+独立雷达，带灯光和 PhysicsScene；底层阶梯 USD 完全自包含，不依赖 Lidar_Hiking：
+
+```text
+tests/scenes/MID360_Test_H06cm.usda
+tests/scenes/MID360_Test_H10cm.usda
+tests/scenes/MID360_Test_H15cm.usda
+```
+
+如何切换 Rotary Scan、G1 4010/5010，以及如何在 RViz2 中选择点云话题，见
+`tests/scenes/README.md`。
+
 ## 重建与验证
 
 重新写入 Petal Scan 机器人配置：

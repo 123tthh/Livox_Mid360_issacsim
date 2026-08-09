@@ -1,0 +1,49 @@
+{
+  "default_sensor": "assets/petal_scan/standalone/Livox_MID360_Petal_Scan.usd",
+  "schema_version": 1,
+  "scenes": {
+    "h06cm": {
+      "environment": {
+        "path": "tests/scenes/stairs/MID360_Test_Stairs_H06cm.usda",
+        "sha256": "17c1815dfa4e89c99067cdb810e50642c0041b4991bfbfc4c985124e5086fedd"
+      },
+      "layout": "ramp-platform-flat-up-platform-down-enclosed",
+      "num_steps": 4,
+      "stage": {
+        "path": "tests/scenes/MID360_Test_H06cm.usda",
+        "sha256": "c390744d684fc2f4bbbd10f3930c4972f93a548e30554f1e1db7d084a0f00745"
+      },
+      "step_height_m": 0.06,
+      "width_m": 6.0
+    },
+    "h10cm": {
+      "environment": {
+        "path": "tests/scenes/stairs/MID360_Test_Stairs_H10cm.usda",
+        "sha256": "36bc8dd28e8b42a70902c29b170d227f7ad2d0f3f9cb8c4b53e1dcb0bb125b0f"
+      },
+      "layout": "ramp-platform-flat-up-platform-down-enclosed",
+      "num_steps": 4,
+      "stage": {
+        "path": "tests/scenes/MID360_Test_H10cm.usda",
+        "sha256": "d6a9f904fe0f2d1c0b7cca45ed2a53dd4cbd31b2c30cebc23439f224f837f708"
+      },
+      "step_height_m": 0.1,
+      "width_m": 6.0
+    },
+    "h15cm": {
+      "environment": {
+        "path": "tests/scenes/stairs/MID360_Test_Stairs_H15cm.usda",
+        "sha256": "d66254e7152e1951b85ad7780f21bce3fbcd165f1bb9936c1a5630d07f056988"
+      },
+      "layout": "flat-up-platform-down",
+      "num_steps": 8,
+      "stage": {
+        "path": "tests/scenes/MID360_Test_H15cm.usda",
+        "sha256": "9c84f9ad3f1756c3d01d063f82e39f90aab44025fb5ed7867015ce73c5832186"
+      },
+      "step_height_m": 0.15,
+      "width_m": 1.5
+    }
+  },
+  "source": "Lidar_Hiking self-contained directional stair fixtures"
+}

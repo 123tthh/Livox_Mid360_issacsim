@@ -19,6 +19,7 @@ from pxr import Gf, Usd, UsdGeom, UsdPhysics  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = json.loads((ROOT / "assets/catalog.json").read_text(encoding="utf-8"))
+SCENE_CATALOG = json.loads((ROOT / "tests/scenes/catalog.json").read_text(encoding="utf-8"))
 LIDAR_SUFFIX = "/torso_link/mid360_link/mid360_native_approx"
 
 
@@ -128,13 +129,63 @@ def render_smoke(asset_id: str, entry: dict[str, object]) -> None:
     print(f"RENDER_OK={asset_id}", flush=True)
 
 
+def validate_scene(scene_id: str, entry: dict[str, object]) -> None:
+    path = ROOT / str(entry["stage"]["path"])
+    stage = Usd.Stage.Open(str(path))
+    if stage is None or str(stage.GetDefaultPrim().GetPath()) != "/World":
+        raise RuntimeError(f"could not open test scene {path}")
+    environment = stage.GetPrimAtPath("/World/Environment")
+    mesh = stage.GetPrimAtPath("/World/Environment/mesh")
+    if not environment.IsValid() or not mesh.IsValid():
+        raise RuntimeError(f"missing composed stair environment in {scene_id}")
+    step_height = float(environment.GetAttribute("stairs:stepHeight").Get())
+    if abs(step_height - float(entry["step_height_m"])) > 1.0e-9:
+        raise RuntimeError(f"wrong step height in {scene_id}: {step_height}")
+    collision = mesh.GetAttribute("physics:collisionEnabled").Get()
+    if collision is not True:
+        raise RuntimeError(f"collision is not enabled in {scene_id}")
+    lidar = _one_lidar(stage)
+    imu = stage.GetPrimAtPath("/World/MID360/torso_link/mid360_imu")
+    if not imu.IsValid():
+        raise RuntimeError(f"missing standalone MID-360 IMU in {scene_id}")
+    print(
+        f"SCENE_OK={scene_id} STEP_HEIGHT_M={step_height:g} LIDAR={lidar.GetPath()}",
+        flush=True,
+    )
+
+
+def render_scene_smoke(scene_id: str, entry: dict[str, object]) -> None:
+    context = omni.usd.get_context()
+    context.open_stage(str(ROOT / str(entry["stage"]["path"])))
+    for _ in range(8):
+        APP.update()
+    stage = context.get_stage()
+    lidar = _one_lidar(stage)
+    render_product = rep.create.render_product(
+        str(lidar.GetPath()),
+        resolution=(32, 32),
+        name=f"{scene_id}_SceneSmokeRenderProduct",
+        render_vars=["GenericModelOutput", "RtxSensorMetadata"],
+    )
+    for _ in range(12):
+        APP.update()
+    render_product.destroy()
+    for _ in range(3):
+        APP.update()
+    print(f"SCENE_RENDER_OK={scene_id}", flush=True)
+
+
 def main() -> None:
     try:
         for asset_id, entry in CATALOG["assets"].items():
             validate_asset(asset_id, entry)
         for asset_id in ("mid360-petal-standalone", "mid360-rotary-standalone"):
             render_smoke(asset_id, CATALOG["assets"][asset_id])
+        for scene_id, entry in SCENE_CATALOG["scenes"].items():
+            validate_scene(scene_id, entry)
+        render_scene_smoke("h10cm", SCENE_CATALOG["scenes"]["h10cm"])
         print(f"ISAACSIM_ASSET_COUNT={len(CATALOG['assets'])}", flush=True)
+        print(f"ISAACSIM_SCENE_COUNT={len(SCENE_CATALOG['scenes'])}", flush=True)
     except BaseException:
         traceback.print_exc()
         raise
